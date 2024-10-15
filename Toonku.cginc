@@ -4,6 +4,7 @@
 #include "ToonkuInclude.cginc"
 
 sampler2D _MainTex;
+sampler2D _NormalTex;
 float4 _MainTex_TexelSize;
 sampler2D _MetalnessTex;
 sampler2D _RoughnessTex;
@@ -163,6 +164,8 @@ v2fa vert_process(appdata v) {
     o.screenpos = ComputeScreenPos(o.pos);
     o.normal = normalize(mul(v.normal, (float3x3)unity_WorldToObject));
     o.onormal = v.normal;
+    o.tangent = normalize(mul((float3x3)unity_ObjectToWorld, v.tangent.xyz));
+    o.bitangent = cross(o.normal, o.tangent) * v.tangent.w * unity_WorldTransformParams.w;
     // o.viewdir = normalize(WorldSpaceViewDir(v.pos));
     #ifdef TOONKU_FIREWORKS
     o.camera_pos = mul(unity_WorldToObject, float4(_WorldSpaceCameraPos, 1));
@@ -612,12 +615,16 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     i.pos = input.pos;
     i.uv = input.uv;
     i.wpos = input.wpos;
-    i.normal = input.normal * facing;
     i.facing = facing;
     i.onormal = normalize(input.onormal);
     i.opos = input.opos;
     i.vertex_color = input.color;
-    // TODO: normal mapping
+    // normal mapping :)
+    float3 tex_normal = UnpackNormal(tex2D(_NormalTex, i.uv));
+    i.normal.x = dot(float3(input.tangent.x, input.bitangent.x, input.normal.x), tex_normal);
+    i.normal.y = dot(float3(input.tangent.y, input.bitangent.y, input.normal.y), tex_normal);
+    i.normal.z = dot(float3(input.tangent.z, input.bitangent.z, input.normal.z), tex_normal);
+    i.normal = i.normal * facing;
     i.normal = normalize(i.normal);
     i.view_dir = normalize(_WorldSpaceCameraPos - i.wpos.xyz);
     i.fresnel = dot(i.normal, i.view_dir);

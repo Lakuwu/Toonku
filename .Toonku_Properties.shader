@@ -2,6 +2,7 @@
 		[Space]
 		_Color("Color", Color) = (1, 1, 1, 1)
 		[NoScaleOffset] _MainTex("Texture", 2D) = "white" {}
+		[Normal][NoScaleOffset] _NormalTex("Normal Map Texture", 2D) = "bump" {}
 		_Metalness("Metalness", range(0,1)) = 0
 		[NoScaleOffset] _MetalnessTex("Metalness Texture", 2D) = "white" {}
 		_Roughness("Roughness", range(0,1)) = 0.5

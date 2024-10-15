@@ -6,6 +6,7 @@ struct appdata {
     float4 uv : TEXCOORD0;
     float3 normal : NORMAL;
     float4 color : COLOR0;
+    float4 tangent : TANGENT;
 };
 
 struct ToonkuData {
@@ -43,6 +44,8 @@ struct v2fa {
     float3 random2 : TEXCOORD9;
     #endif
     float3 vnormal : TEXCOORD10;
+    float3 tangent : TEXCOORD11;
+    float3 bitangent : TEXCOORD12;
     // float facing : VFACE;
     // float3 viewdir : TEXCOORD1;
     // float3 normal2 : NORMAL1;
