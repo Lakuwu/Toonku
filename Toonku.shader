@@ -1,19 +1,6 @@
-﻿Shader "Laku/Toonku" {
+Shader "Laku/Toonku" {
     Properties {
-		[Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
-		[Enum(UnityEngine.Rendering.BlendMode)] _BlendSrcBase("Base Blend Src", Float) = 1
-		[Enum(UnityEngine.Rendering.BlendMode)] _BlendDstBase("Base Blend Dst", Float) = 0
-		[Enum(UnityEngine.Rendering.BlendOp)] _BlendOpBase("Base Blend Op", Float) = 0
-		[Enum(UnityEngine.Rendering.BlendMode)] _BlendSrcAlphaBase("Base Blend Alpha Src", Float) = 1
-		[Enum(UnityEngine.Rendering.BlendMode)] _BlendDstAlphaBase("Base Blend Alpha Dst", Float) = 10
-		[Enum(UnityEngine.Rendering.BlendOp)] _BlendOpAlphaBase("Base Blend Alpha Op", Float) = 0
-		[Enum(UnityEngine.Rendering.BlendMode)] _BlendSrcAdd("Add Blend Src", Float) = 1
-		[Enum(UnityEngine.Rendering.BlendMode)] _BlendDstAdd("Add Blend Dst", Float) = 1
-		[Enum(UnityEngine.Rendering.BlendOp)] _BlendOpAdd("Add Blend Op", Float) = 4
-		[Enum(UnityEngine.Rendering.BlendMode)] _BlendSrcAlphaAdd("Add Blend Alpha Src", Float) = 0
-		[Enum(UnityEngine.Rendering.BlendMode)] _BlendDstAlphaAdd("Add Blend Alpha Dst", Float) = 1
-		[Enum(UnityEngine.Rendering.BlendOp)] _BlendOpAlphaAdd("Add Blend Alpha Op", Float) = 4
-		
+        [Header(Textures)]
 		[Space]
 		_Color("Color", Color) = (1, 1, 1, 1)
 		[NoScaleOffset] _MainTex("Texture", 2D) = "white" {}
@@ -39,6 +26,7 @@
 		
 		[Space]
 		_FresnelLightAmount("Fresnel light amount", range(0,2)) = 0.1
+        [NoScaleOffset] _FresnelLightMaskTex("Fresnel light Mask", 2D) = "white" {}
 		_FresnelLightColor("Fresnel light color", Color) = (1,1,1,1)
 		_FresnelLightStart("Fresnel light start", range(0,1)) = 0.3
 		_FresnelLightEnd("Fresnel light end", range(0,1)) = 0.5
@@ -52,8 +40,8 @@
 		
 		[Header(Color Adjustment)]
 		[Space]
-		_LightnessMul("Lightness/Value Multiplier", Range(0, 2)) = 1
-		_ChromaMul("Chroma/Saturation Multiplier", Range(0, 2)) = 1
+		_LightnessMul("Lightness/Value Multiplier", Range(-3, 3)) = 1
+		_ChromaMul("Chroma/Saturation Multiplier", Range(-3, 3)) = 1
 		_HueShift("Hue Shift", Range(-1,1)) = 0
 		[ToggleUI] _HueShiftAnim ("Animate Hue Shift", Float) = 0
 		[ToggleUI] _HueShiftFresnel ("Fresnel Hue Shift", Float) = 0
@@ -69,7 +57,8 @@
 		
 		[Header(Lighting)]
 		[Space]
-		_LightingOverride("Lighting Override", range(0,1)) = 0
+		_MinLight("Minimum Light Value", Range(0,1)) = 0
+        _FinalBrightness("Final Brightness", Range(0,1)) = 1
 		[ToggleUI] _UseSH("Use Spherical Harmonics", Float) = 1
 		[ToggleUI] _UseRealtimeLights("Use Realtime Lights", Float) = 1
 		[ToggleUI] _SHDirectionalColor("Spherical Harmonics directional color", Float) = 0
@@ -100,6 +89,23 @@
 		[Space]
         [ToggleUI] _Toggle1 ("Hide UV X 1-2", Float) = 0
         [ToggleUI] _Toggle2 ("Hide UV X 2-3", Float) = 0
+        
+		[Header(Rendering)]
+        [Space]
+        [ToggleUI] _ZWrite ("ZWrite", Float) = 1
+        [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
+		[Enum(UnityEngine.Rendering.BlendMode)] _BlendSrcBase("Base Blend Src", Float) = 1
+		[Enum(UnityEngine.Rendering.BlendMode)] _BlendDstBase("Base Blend Dst", Float) = 0
+		[Enum(UnityEngine.Rendering.BlendOp)] _BlendOpBase("Base Blend Op", Float) = 0
+		[Enum(UnityEngine.Rendering.BlendMode)] _BlendSrcAlphaBase("Base Blend Alpha Src", Float) = 1
+		[Enum(UnityEngine.Rendering.BlendMode)] _BlendDstAlphaBase("Base Blend Alpha Dst", Float) = 10
+		[Enum(UnityEngine.Rendering.BlendOp)] _BlendOpAlphaBase("Base Blend Alpha Op", Float) = 0
+		[Enum(UnityEngine.Rendering.BlendMode)] _BlendSrcAdd("Add Blend Src", Float) = 1
+		[Enum(UnityEngine.Rendering.BlendMode)] _BlendDstAdd("Add Blend Dst", Float) = 1
+		[Enum(UnityEngine.Rendering.BlendOp)] _BlendOpAdd("Add Blend Op", Float) = 4
+		[Enum(UnityEngine.Rendering.BlendMode)] _BlendSrcAlphaAdd("Add Blend Alpha Src", Float) = 0
+		[Enum(UnityEngine.Rendering.BlendMode)] _BlendDstAlphaAdd("Add Blend Alpha Dst", Float) = 1
+		[Enum(UnityEngine.Rendering.BlendOp)] _BlendOpAlphaAdd("Add Blend Alpha Op", Float) = 4
     }
     SubShader {
 		// Tags { "Queue" = "Geometry" }
@@ -109,14 +115,16 @@
 			Tags { "LightMode" = "ForwardBase" }
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
 			BlendOp [_BlendOp], [_BlendOpAlpha]
+			ZWrite [_ZWrite]
             HLSLPROGRAM
 			#pragma target 5.0
             #pragma vertex vert
-			#define TOONKU_GEOMETRY
+			// #define TOONKU_GEOMETRY
 			#ifdef TOONKU_GEOMETRY
 			#pragma geometry geom
 			#endif
             #pragma fragment frag
+			#pragma warning (disable : 4008)
 			#define BASEPASS
 			#include "Toonku.cginc"	
 
@@ -128,14 +136,16 @@
 			Tags { "LightMode"="ForwardAdd" }
 			Blend [_BlendSrcAdd] [_BlendDstAdd], [_BlendSrcAlphaAdd] [_BlendDstAlphaAdd]
 			BlendOp [_BlendOpAdd], [_BlendOpAlphaAdd]
+			ZWrite [_ZWrite]
 			HLSLPROGRAM
 			#pragma target 5.0
             #pragma vertex vert
-			#define TOONKU_GEOMETRY
+			// #define TOONKU_GEOMETRY
 			#ifdef TOONKU_GEOMETRY
 			#pragma geometry geom
 			#endif
             #pragma fragment frag
+			#pragma warning (disable : 4008)
 			#define ADDPASS
 			#pragma multi_compile_fragment POINT DIRECTIONAL SPOT POINT_COOKIE DIRECTIONAL_COOKIE
 			#include "Toonku.cginc"

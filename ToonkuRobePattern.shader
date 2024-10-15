@@ -1,4 +1,4 @@
-Shader "Laku/ToonkuSnow" {
+Shader "Laku/ToonkuRobePattern" {
     Properties {
         [Header(Textures)]
 		[Space]
@@ -89,23 +89,6 @@ Shader "Laku/ToonkuSnow" {
 		[Space]
         [ToggleUI] _Toggle1 ("Hide UV X 1-2", Float) = 0
         [ToggleUI] _Toggle2 ("Hide UV X 2-3", Float) = 0
-		
-		[Header(Snow)]
-		[Space]
-		[NoScaleOffset] _SnowMaskTex("Snow Mask", 2D) = "white" {}
-		_SnowUV("Snow UV", Vector) = (0, 0, 1, 1)
-		_SnowAlpha("Snow Alpha", Range(0,1)) = 1
-		_SnowScale("Snow Scale", Range(0,10)) = 1
-		[IntRange] _SnowAmount("Snow Amount", Range(0,200)) = 1
-		_SnowSpeed("Snow Speed", Range(-10,10)) = 1
-		[IntRange] _SnowXMul("Snow X Mul", Range(1, 8)) = 1
-		[Space]
-		_CandyUV("Candy UV", Vector) = (0, 0, 1, 1)
-		_CandyColor0("Candy Color 0", Color) = (1, 1, 1, 1)
-		_CandyColor1("Candy Color 1", Color) = (1, 1, 1, 1)
-		_CandyColor2("Candy Color 2", Color) = (1, 1, 1, 1)
-		_CandyXMul("Candy XMul", float) = 0
-		_CandyYMul("Candy YMul", float) = 0
         
 		[Header(Rendering)]
         [Space]
@@ -130,47 +113,56 @@ Shader "Laku/ToonkuSnow" {
 		Cull [_Cull]
         Pass {
 			Tags { "LightMode" = "ForwardBase" }
-			Blend [_BlendSrcBase] [_BlendDstBase]
-            CGPROGRAM
+			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
+			BlendOp [_BlendOp], [_BlendOpAlpha]
+            HLSLPROGRAM
 			#pragma target 5.0
             #pragma vertex vert
+			// #define TOONKU_GEOMETRY
+			#ifdef TOONKU_GEOMETRY
+			#pragma geometry geom
+			#endif
             #pragma fragment frag
 			#define BASEPASS
-			#define TOONKU_EXTRA
-			
-			#include "ToonkuInclude.cginc"	
-			#include "snowflake.cginc"
+            #define TOONKU_ROBEPATTERN
+            // #define extra_func robepattern
 			#include "Toonku.cginc"	
-            ENDCG
+
+            ENDHLSL
         }
 
 
 		Pass {
 			Tags { "LightMode"="ForwardAdd" }
-			Blend [_BlendSrcAdd] [_BlendDstAdd]
-			BlendOp [_BlendOpAdd]
-			CGPROGRAM
+			Blend [_BlendSrcAdd] [_BlendDstAdd], [_BlendSrcAlphaAdd] [_BlendDstAlphaAdd]
+			BlendOp [_BlendOpAdd], [_BlendOpAlphaAdd]
+			HLSLPROGRAM
 			#pragma target 5.0
             #pragma vertex vert
+			// #define TOONKU_GEOMETRY
+			#ifdef TOONKU_GEOMETRY
+			#pragma geometry geom
+			#endif
             #pragma fragment frag
 			#define ADDPASS
+            #define TOONKU_ROBEPATTERN
+            // #define extra_func robepattern
 			#pragma multi_compile_fragment POINT DIRECTIONAL SPOT POINT_COOKIE DIRECTIONAL_COOKIE
-			#define TOONKU_EXTRA
-			// float4 extra_func();
-			#include "ToonkuInclude.cginc"
-			#include "snowflake.cginc"
 			#include "Toonku.cginc"
-			ENDCG
+			ENDHLSL
 		}
 
 		Pass {
 			Tags {"LightMode"="ShadowCaster"}
 
-			CGPROGRAM
+			HLSLPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
 			#pragma multi_compile_shadowcaster
 			#include "UnityCG.cginc"
+
+			float _Toggle1;
+            float _Toggle2;
 
 			struct v2f {
 				V2F_SHADOW_CASTER;
@@ -179,13 +171,15 @@ Shader "Laku/ToonkuSnow" {
 			v2f vert(appdata_base v) {
 				v2f o;
 				TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
+				if(_Toggle1 && v.texcoord.x >= 1.0f && v.texcoord.x < 2.0f) { o.pos.z = -1; }
+                if(_Toggle2 && v.texcoord.x >= 2.0f && v.texcoord.x < 3.0f) { o.pos.z = -1; }
 				return o;
 			}
 
 			float4 frag(v2f i) : SV_Target {
 				SHADOW_CASTER_FRAGMENT(i)
 			}
-			ENDCG
+			ENDHLSL
 		}
     }
 }

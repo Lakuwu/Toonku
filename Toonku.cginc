@@ -33,6 +33,7 @@ float _FresnelLightRingEnd;
 float _FresnelLightRingMode;
 float _FresnelLightRingMul;
 float _FresnelLightAmount;
+sampler2D _FresnelLightMaskTex;
 float _FresnelLightTint;
 float _AnimIdx;
 float _LightnessMul;
@@ -50,6 +51,9 @@ float _Debug;
 float _LightingOverride;
 float _UseSH, _UseRealtimeLights;
 float _GeomAngle;
+
+float _MinLight;
+float _FinalBrightness;
 
 float4 permute(float4 x){return glsl_mod(((x*34.0)+1.0)*x, 289.0);}
 float4 taylorInvSqrt(float4 r){return 1.79284291400159 - 0.85373472095314 * r;}
@@ -228,10 +232,10 @@ void geom(triangle appdata v[3], inout TriangleStream<v2fa> output) {
     output.Append(o[1]);
     output.Append(o[2]);
     output.RestartStrip();
-    float angle = (0.5) * 2 * PI;
+    float angle = (_GeomAngle) * 2 * PI;
     float scale = 1;
     float4 q = angle_axis(angle, float3(0,1,0));
-    return;
+    // return;
     [unroll]
     for(int i = 0; i < 3; ++i) {
         v[i].pos.xyz = rotate(v[i].pos.xyz * scale, q);
@@ -295,6 +299,90 @@ float4 textureNice(sampler2D tex, float4 texelsize, float2 uv) {
     return tex2D(tex, uv);
 }
 
+float3 permute(float3 x) { return glsl_mod(((x*34.0)+1.0)*x, 289.0); }
+float snoise(float2 v){
+  const float4 C = float4(0.211324865405187, 0.366025403784439,
+           -0.577350269189626, 0.024390243902439);
+  float2 i  = floor(v + dot(v, C.yy) );
+  float2 x0 = v -   i + dot(i, C.xx);
+  float2 i1;
+  i1 = (x0.x > x0.y) ? float2(1.0, 0.0) : float2(0.0, 1.0);
+  float4 x12 = x0.xyxy + C.xxzz;
+  x12.xy -= i1;
+  i = glsl_mod(i, 289.0);
+  float3 p = permute( permute( i.y + float3(0.0, i1.y, 1.0 ))
+  + i.x + float3(0.0, i1.x, 1.0 ));
+  float3 m = max(0.5 - float3(dot(x0,x0), dot(x12.xy,x12.xy),
+    dot(x12.zw,x12.zw)), 0.0);
+  m = m*m ;
+  m = m*m ;
+  float3 x = 2.0 * frac(p * C.www) - 1.0;
+  float3 h = abs(x) - 0.5;
+  float3 ox = floor(x + 0.5);
+  float3 a0 = x - ox;
+  m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+  float3 g;
+  g.x  = a0.x  * x0.x  + h.x  * x0.y;
+  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+  return 130.0 * dot(m, g);
+}
+
+float sdf_magic(float d) {
+    float fd = length(float2(ddx(d),ddy(d)));
+    return d / max(fd, .0001);
+}
+
+float robe_sample(float f) {
+    float f0 = frac(f);
+    float d0 = f0 - .5;
+    float f1 = frac(f + .5);
+    float d1 = f1 - .5;
+    float e0 = -sdf_magic(d0);
+    float e1 = sdf_magic(d1);
+    e0 = saturate(e0);
+    e1 = saturate(e1);
+    float v0 = lerp(e0, e1, f0 > .75 || f0 < .25);
+    return v0;
+}
+
+float robe_f0(float2 uv, float t) {
+    float f = snoise(uv * 6 + t.xx) * .3
+            + snoise(uv * 2 + t.xx) * .7;
+    return f;
+}
+
+float robe_f1(float2 uv, float t) {
+    float f = snoise(uv * 1 + t.xx + 3) * .3
+            + snoise(uv * 2 + t.xx + 3) * .7;
+    return f;
+}
+
+float robepattern(ToonkuData i) {
+    float3 col;
+    float t0 = _Time.x * .05 + 3;
+    float t1 = -_Time.x * .03 + 3;
+    
+    float2 uvdx = float2(ddx(i.uv.x), ddy(i.uv.x)) * .25;
+    float2 uvdy = float2(ddx(i.uv.y), ddy(i.uv.y)) * .25;
+    
+    float v0 = robe_sample(robe_f0(i.uv - uvdx - uvdy, t0) * 14);
+    v0 +=      robe_sample(robe_f0(i.uv + uvdx - uvdy, t0) * 14);
+    v0 +=      robe_sample(robe_f0(i.uv - uvdx + uvdy, t0) * 14);
+    v0 +=      robe_sample(robe_f0(i.uv + uvdx + uvdy, t0) * 14);
+    v0 *= .25;
+
+    float n = 6;
+    float v1 = robe_sample(robe_f1(i.uv - uvdx - uvdy, t1) * n);
+    v1 +=      robe_sample(robe_f1(i.uv + uvdx - uvdy, t1) * n);
+    v1 +=      robe_sample(robe_f1(i.uv - uvdx + uvdy, t1) * n);
+    v1 +=      robe_sample(robe_f1(i.uv + uvdx + uvdy, t1) * n);
+    v1 *= .25;
+    float v = (v0 + v1) * .5;
+    return v;
+    // col = v;
+    // return float4(col * .025 + .01, 1);
+}
+
 float4 sample_maintex(ToonkuData i) {
     #ifdef TOONKU_EXTRA
         float4 extra_col = extra_func(i);
@@ -311,7 +399,7 @@ float4 sample_maintex(ToonkuData i) {
     #endif
 }
 
-float3 shading(ToonkuData i, float diffuse) {
+float3 shading(ToonkuData i, float diffuse, float fresnel_light_mask) {
     float3 albedo_col = i.color.rgb;
     float diffuse_shade = smoothstep(_DiffShadeStart, _DiffShadeEnd, diffuse);
     float3 diffuse_col = albedo_col * lerp(_DiffShadeColor, float3(1,1,1), diffuse_shade);
@@ -327,6 +415,7 @@ float3 shading(ToonkuData i, float diffuse) {
     float3 fresnel_light_col = lerp(_FresnelLightColor, float3(0,0,0), fresnel_light);
     fresnel_light_col *= lerp(float3(1,1,1), i.vertex_color, _MultiplySpecularByVertexCol);
     fresnel_light_col = lerp(fresnel_light_col, fresnel_light_col * albedo_col, _FresnelLightTint);
+    fresnel_light_col *= fresnel_light_mask;
     float3 col = diffuse_col * fresnel_shade_col + (_FresnelLightAmount * fresnel_light_col);
     return col;
 }
@@ -458,7 +547,7 @@ float3 oklab_adjust(ToonkuData i, float3 col, float3 hue) {
 
 float3 color_adjust(ToonkuData i, float3 col, float3 hue) {
     float3 ret = col;
-    [branch] if(hue.x != 0) {
+    [branch] if(hue.x || _ChromaMul != 1.0f || _LightnessMul != 1.0f) {
         [branch] if(_UseHSV * tex2D(_HSVMaskTex, i.uv).x)
             ret = hsv_adjust(i, col, hue);
         else
@@ -467,34 +556,9 @@ float3 color_adjust(ToonkuData i, float3 col, float3 hue) {
     return ret;
 }
 
-float3 permute(float3 x) { return glsl_mod(((x*34.0)+1.0)*x, 289.0); }
 
-float snoise(float2 v){
-  const float4 C = float4(0.211324865405187, 0.366025403784439,
-           -0.577350269189626, 0.024390243902439);
-  float2 i  = floor(v + dot(v, C.yy) );
-  float2 x0 = v -   i + dot(i, C.xx);
-  float2 i1;
-  i1 = (x0.x > x0.y) ? float2(1.0, 0.0) : float2(0.0, 1.0);
-  float4 x12 = x0.xyxy + C.xxzz;
-  x12.xy -= i1;
-  i = glsl_mod(i, 289.0);
-  float3 p = permute( permute( i.y + float3(0.0, i1.y, 1.0 ))
-  + i.x + float3(0.0, i1.x, 1.0 ));
-  float3 m = max(0.5 - float3(dot(x0,x0), dot(x12.xy,x12.xy),
-    dot(x12.zw,x12.zw)), 0.0);
-  m = m*m ;
-  m = m*m ;
-  float3 x = 2.0 * frac(p * C.www) - 1.0;
-  float3 h = abs(x) - 0.5;
-  float3 ox = floor(x + 0.5);
-  float3 a0 = x - ox;
-  m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
-  float3 g;
-  g.x  = a0.x  * x0.x  + h.x  * x0.y;
-  g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-  return 130.0 * dot(m, g);
-}
+
+
 
 float tv_static(ToonkuData i) {
     float lines_per_unit = 120;
@@ -558,6 +622,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     i.view_dir = normalize(_WorldSpaceCameraPos - i.wpos.xyz);
     i.fresnel = dot(i.normal, i.view_dir);
     i.color = lerp(half4(1,1,1,1), sample_maintex(i), _TexInfluence) * _Color;
+    // return i.color;
     i.vnormal = normalize(input.vnormal);
     // #ifdef TOONKU_FIREWORKS
     // float3 funny = input.vnormal;
@@ -585,6 +650,18 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     float diffuse_wl = half_lambert(wl_ndotl) * lightcolor0_lum;
     // float diffuse_wl = (wl_ndotl) * lightcolor0_lum;
     
+    
+    float fresnel_light_mask = tex2D(_FresnelLightMaskTex, i.uv);
+#ifdef TOONKU_ROBEPATTERN
+    float robe_val = robepattern(i);
+    i.color = float4(robe_val.xxx * .03 + .01, 1);
+    float mask = 1 - abs((robe_val * 2) - 1);
+    mask += saturate((robe_val * 2 - 1)) * .0;
+    fresnel_light_mask *= mask;
+    // fresnel_light_mask *= saturate((robe_val * 2) - 1); 
+    // fresnel_light_mask *= robe_val;
+#endif
+
     float4 col = 1;
 #ifdef BASEPASS
     // https://github.com/lilxyzw/lilToon/blob/31c6e3936d0571207935a4395c3374e25b82c009/Assets/lilToon/Shader/Includes/openlit_core.hlsl#L65C8-L65C8
@@ -631,13 +708,13 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     // col.rgb = color_adjust(i, saturate(col.rgb), input.hue);
     // float3 lighting_rgb = saturate(ambient_col + _LightColor0 * attenuation);
     // col.rgb *= lighting_rgb;
-    diffuse_ambient = lerp(diffuse_ambient, 1, _LightingOverride);
-    diffuse_wl = lerp(diffuse_wl, 1, _LightingOverride);
-    float3 col_ambient = shading(i, diffuse_ambient);
-    float3 col_wl = shading(i, diffuse_wl);
-    col_ambient = color_adjust(i, saturate(col_ambient), input.hue) * saturate(ambient_col);
-    col_wl = color_adjust(i, saturate(col_wl), input.hue) * saturate(_LightColor0 * attenuation);
+    float3 col_ambient = shading(i, diffuse_ambient, fresnel_light_mask);
+    col_ambient = color_adjust(i, saturate(col_ambient), input.hue);
+    col_ambient *= max(saturate(ambient_col), _MinLight.xxx);
     col_ambient = lerp(0, col_ambient, _UseSH);
+    float3 col_wl = shading(i, diffuse_wl, fresnel_light_mask);
+    col_wl = color_adjust(i, saturate(col_wl), input.hue);
+    col_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
     col_wl = lerp(0, col_wl, _UseRealtimeLights);
     col.rgb = max(col_ambient, col_wl);
     // return float4(col.rgb, 1);
@@ -658,9 +735,9 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 #endif
     
 #ifdef ADDPASS
-    col.rgb = shading(i, diffuse_wl);
+    col.rgb = shading(i, diffuse_wl, fresnel_light_mask);
     col.rgb = color_adjust(i, col, input.hue);
-    col.rgb *= saturate(_LightColor0 * attenuation);
+    col.rgb *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
 #endif
     
     float metalness = tex2D(_MetalnessTex, i.uv) * _Metalness;
@@ -672,6 +749,9 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 #ifdef ADDPASS
     col.rgb *= col.a;
 #endif
+
+    col.rgb *= _FinalBrightness;
+
     float2 screen_uv = input.screenpos.xy / input.screenpos.w;
     float3 dithering = (ditherNoiseFuncHigh(screen_uv) - 0.5) * 2 * 0.002;
     col.rgb = max(col.rgb + dithering, float3(0,0,0));

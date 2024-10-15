@@ -43,7 +43,9 @@ half4 env_spec(float3 normal, float4 wpos, float4 color, float metallic, float r
     half4 f0 = lerp(0.04, color, metallic);
     half4 f = fresnel_laku(normal, wpos, f0);
     half4 spec = env * f;
-    return max(0,spec);
+    // return max(0,spec); 
+    // Did you know environment maps can have values above 1? I sure didn't!
+    return saturate(spec);
 }
 
 float sin01(float t) {return (sin(t)+1)*.5;}
