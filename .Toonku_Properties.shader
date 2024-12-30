@@ -2,9 +2,12 @@
 		[Space]
 		_Color("Color", Color) = (1, 1, 1, 1)
 		[NoScaleOffset] _MainTex("Texture", 2D) = "white" {}
+		[NoScaleOffset] _EmissionTex("Emission", 2D) = "black" {}
+		_EmissionMul("Emission Multiplier", Float) = 1
 		[Normal][NoScaleOffset] _NormalTex("Normal Map Texture", 2D) = "bump" {}
 		_Metalness("Metalness", range(0,1)) = 0
 		[NoScaleOffset] _MetalnessTex("Metalness Texture", 2D) = "white" {}
+		[ToggleUI] _MetalnessDiffuseMask ("Metalness as Diffuse Mask", Float) = 0
 		_Roughness("Roughness", range(0,1)) = 0.5
 		[NoScaleOffset] _RoughnessTex("Roughness Texture", 2D) = "white" {}
 		_EnvMapMask("Environment Mapping", range(0,1)) = 0
@@ -56,7 +59,7 @@
 		
 		[Header(Lighting)]
 		[Space]
-		_MinLight("Minimum Light Value", Range(0,1)) = 0
+		_MinLight("Minimum Light Value", Range(0,2)) = 0
         _FinalBrightness("Final Brightness", Range(0,1)) = 1
 		[ToggleUI] _UseSH("Use Spherical Harmonics", Float) = 1
 		[ToggleUI] _UseRealtimeLights("Use Realtime Lights", Float) = 1

@@ -1,13 +1,18 @@
-Shader "Laku/Toonku" {
+Shader "Laku/ToonkuXmasLights" {
     Properties {
 @@insert .Toonku_Properties.shader@@
-        
+        [Header(Lights)]
+		[Space]
+		[ToggleUI] _WarmWhite("WarmWhite", Float) = 0
+		[ToggleUI] _GamerRGB("GamerRGB", Float) = 0
+		
 @@insert .Toonku_Rendering_Opaque.shader@@
     }
     SubShader {
 		// Tags { "Queue" = "Geometry" }
 		//ZTest Always
 		Cull [_Cull]
+		GrabPass { }
         Pass {
 			Tags { "LightMode" = "ForwardBase" }
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
@@ -24,6 +29,7 @@ Shader "Laku/Toonku" {
             #pragma fragment frag
 			#pragma warning (disable : 4008)
 			#define BASEPASS
+			#define XMASLIGHTS
 			#include "Toonku.cginc"
             ENDHLSL
         }
@@ -44,6 +50,7 @@ Shader "Laku/Toonku" {
             #pragma fragment frag
 			#pragma warning (disable : 4008)
 			#define ADDPASS
+			#define XMASLIGHTS
 			#pragma multi_compile_fragment POINT DIRECTIONAL SPOT POINT_COOKIE DIRECTIONAL_COOKIE
 			#include "Toonku.cginc"
 			ENDHLSL
