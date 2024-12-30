@@ -22,6 +22,7 @@ struct ToonkuData {
     float fresnel;
     float3 view_dir;
     float3 vnormal;
+    float metalness;
     // float4 uv2 : TEXCOORD1;
     // float3 normal2 : NORMAL1;
     // float3 viewdir : TEXCOORD1;
