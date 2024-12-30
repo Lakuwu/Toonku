@@ -1,1 +1,7 @@
 *.meta
+*.zip
+*.exe
+Toonku.shader
+ToonkuFireworks.shader
+ToonkuRobePattern.shader
+ToonkuSnow.shader
