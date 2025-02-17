@@ -2,6 +2,10 @@ Shader "Laku/ToonkuFireworks" {
     Properties {
 @@insert .Toonku_Properties.shader@@
         
+		[Header(Fireworks)]
+		[Space]
+		// [NoScaleOffset] _RandomDirTex("Random Dir Texture", 2D) = "white" {}
+		
 @@insert .Toonku_Rendering_Opaque.shader@@
     }
     SubShader {

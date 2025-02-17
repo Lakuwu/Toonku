@@ -3,6 +3,10 @@
 float _DoSkirt, _DoEye;
 float4 _SkirtUV, _EyeUV;
 
+// the stinky who came up with this (me) should feel bad for what he did
+// bytes are in reverse order inside the uints, so rows numbered 1-4 would be 0x04030201
+// and the bits are mirrored left to right in the bytes : ) why did i do it like this 
+
 static const uint font[36] = {
     0xc3e77e3c, 0xc3c3c3c3, 0x3c7ee7c3,  // [0] 0
     0xc3e77e3c, 0x3870e0c0, 0xffff0e1c,  // [1] 2
@@ -15,7 +19,8 @@ static const uint font[36] = {
     0xc3c3c3c3, 0xffdbdbdb, 0x66667e7e,  // [8] W
     0xc3e37f3f, 0x3f7fe3c3, 0xc3c3e373,  // [9] R
     0x18181818, 0x18181818, 0x18180000,  // [10]!
-    0x7c787060, 0xff63676e, 0x606060ff,  // [11]4
+    0x0303ffff, 0xc0e07f3f, 0x3c7ee7c3,  // [11]5
+    // 0x7c787060, 0xff63676e, 0x606060ff,  // [11]4
     // 0x3e1e0e06, 0xffc6e676, 0x060606ff,  // [11]4
 };
 
