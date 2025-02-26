@@ -27,7 +27,7 @@
 		_FresnelShadeEnd("Fresnel shade end", range(0,1)) = 0.5
 		
 		[Space]
-		_FresnelLightAmount("Fresnel light amount", range(0,2)) = 0.1
+		_FresnelLightAmount("Fresnel light amount", range(0,3)) = 0.1
         [NoScaleOffset] _FresnelLightMaskTex("Fresnel light Mask", 2D) = "white" {}
 		_FresnelLightColor("Fresnel light color", Color) = (1,1,1,1)
 		_FresnelLightStart("Fresnel light start", range(0,1)) = 0.3
