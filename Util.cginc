@@ -247,7 +247,7 @@ float3 hsv2rgb(float3 c) {
 }
 
 float3 lab_to_lch(float3 c) {
-    return float3(c.x, length(c.yz), atan2(c.z, c.y));
+    return float3(c.x, length(c.yz), any(c.yz) ? atan2(c.z, c.y) : 0);
 }
 
 float3 lch_to_lab(float3 c) {
