@@ -564,8 +564,8 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     // float3 col_rgb = oklab_to_linear_srgb(col_lab) * lighting_rgb;
     // col.rgb = lerp(col_rgb, col.rgb, 1);
     #ifdef TOONKU_FIREWORKS
-    diff = max(diff, do_fireworks(input));
-    diff = max(diff, do_the_thing(i));
+    col.rgb = max(col.rgb, do_fireworks(input));
+    col.rgb = max(col.rgb, do_the_thing(i));
     // return float4(do_the_thing(i), 1);
     // return float4(year(input.uv, 4, float2(0,0)),1);
     #endif
@@ -586,6 +586,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 #ifdef ALPHA
     col.rgb = saturate(diff) + saturate(spec);
     col.a = saturate(i.color.a + luminance(spec));
+    // col.rgb = lerp(saturate(spec), saturate(diff) + saturate(spec), i.color.a);
     // col.a = saturate(i.color.a + max_component(spec));
     // col.a = lerp(i.color.a, 1, luminance(spec));
     // col.a = i.color.a;
