@@ -37,7 +37,7 @@
 		[Space]
 		_FresnelLightRingStart("Fresnel light ring start", range(0,1)) = 1
 		_FresnelLightRingEnd("Fresnel light ring end", range(0,1)) = 1
-		_FresnelLightRingMul("Fresnel light ring mul", range(-1,1)) = 1
+		_FresnelLightRingMul("Fresnel light ring mul", range(-2,2)) = 1
 		[ToggleUI] _FresnelLightRingMode ("Fresnel light ring mode", Float) = 0
 		
 		[Header(Color Adjustment)]
