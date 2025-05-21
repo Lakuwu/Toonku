@@ -15,7 +15,7 @@ Shader "Laku/ToonkuFireworks" {
         Pass {
 			Tags { "LightMode" = "ForwardBase" }
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
-			BlendOp [_BlendOp], [_BlendOpAlpha]
+			BlendOp [_BlendOpBase], [_BlendOpAlpha]
             HLSLPROGRAM
 			#pragma target 5.0
             #pragma vertex vert

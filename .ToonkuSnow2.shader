@@ -23,7 +23,7 @@ Shader "Laku/ToonkuSnow2" {
         Pass {
 			Tags { "LightMode" = "ForwardBase" }
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
-			BlendOp [_BlendOp], [_BlendOpAlpha]
+			BlendOp [_BlendOpBase], [_BlendOpAlpha]
 			ZWrite [_ZWrite]
             
             HLSLPROGRAM
