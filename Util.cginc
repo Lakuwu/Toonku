@@ -310,6 +310,18 @@ void ShadeSH9ToonDouble(float3 lightDirection, out float3 sh_max, out float3 sh_
     sh_min = res - l1;
 }
 
+void SH_Eval_01(float3 light_dir, float3 L0, float3 L1r, float3 L1g, float3 L1b, out float3 sh_max, out float3 sh_min, out float3 sh_dc) {
+    float3 N = light_dir * 0.666666;
+    float4 vB = N.xyzz * N.yzzx;
+    sh_dc = L0;
+    float3 l1;
+    l1.r = dot(L1r, N);
+    l1.g = dot(L1g, N);
+    l1.b = dot(L1b, N);
+    sh_max = L0 + l1;
+    sh_min = L0 - l1;
+}
+
 float half_lambert(float f) {
     f = (0.5 * (f + 1));
     return f * f;

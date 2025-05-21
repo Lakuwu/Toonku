@@ -1,4 +1,5 @@
 #include "UnityCG.cginc"
+#include "lib/LightVolumes.cginc"
 #include "AutoLight.cginc"
 #include "Util.cginc"
 #include "ToonkuInclude.cginc"
@@ -476,36 +477,55 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 #endif
 
     float4 col = 1;
-    float3 diff = 0, spec = 0;
+    float3 diff = 0, spec = 0, emit = 0;
+    float have_light_volumes = _UdonLightVolumeEnabled && _UdonLightVolumeCount != 0;
+    float3 L0 = 0, L1r = 0, L1g = 0, L1b = 0; 
 #ifdef BASEPASS
-    // https://github.com/lilxyzw/lilToon/blob/31c6e3936d0571207935a4395c3374e25b82c009/Assets/lilToon/Shader/Includes/openlit_core.hlsl#L65C8-L65C8
-    // SH magic from OpenLit / LilToon:
-    float3 sh9Dir = unity_SHAr.xyz * 0.333333 + unity_SHAg.xyz * 0.333333 + unity_SHAb.xyz * 0.333333;
-    float3 lightDirectionForSH9 = dot(sh9Dir,sh9Dir) < 0.000001 ? 0 : normalize(sh9Dir);
-    float3 sh_min, sh_max, sh_dc;
-    ShadeSH9ToonDouble(lightDirectionForSH9, sh_max, sh_min, sh_dc);
-    
     float3 ambient_dir = max(0,ShadeSH9(float4(i.normal, 1)));
-    // return float4(sh_dc, 1);
-    
-    float3 lab_sh_dc = linear_srgb_to_oklab(sh_dc);
-    float3 lab_shmax = linear_srgb_to_oklab(sh_max);
     float3 ambient_col = 0;
-    [branch] if(_SHDirectionalColor) {
-        float3 lab_ambient_dir = linear_srgb_to_oklab(ambient_dir);
-        // blend dark colors towards sh_dc to prevent uglyness
-        // float dark = smoothstep(0,1,saturate((lab_ambient_dir.x - .10) * 5));
-        float dark = saturate((lab_ambient_dir.x - .2) * 3);
-        // return float4(dark.xxx, 1);
-        lab_ambient_dir.yz = lerp(lab_sh_dc.yz, lab_ambient_dir.yz, dark);
-        // lab_ambient_dir.yz *= smoothstep(0,1,saturate((lab_ambient_dir.x - .05) * 10));
-        lab_ambient_dir.x = lab_shmax.x;
-        ambient_col = oklab_to_linear_srgb(lab_ambient_dir);
+    float3 sh_min, sh_max, sh_dc;
+    
+    [branch] if(have_light_volumes) {
+        LightVolumeSH(i.wpos, L0, L1r, L1g, L1b);
+        float3 lv_dir = normalize(L1r + L1g + L1b);
+        SH_Eval_01(lv_dir, L0, L1r, L1g, L1b, sh_max, sh_min, sh_dc);
+        float3 lab_sh_dc = linear_srgb_to_oklab(sh_dc);
+        float3 lab_shmax = linear_srgb_to_oklab(sh_max);
+        
+        [branch] if(_SHDirectionalColor) {
+            float3 lab_ambient_dir = linear_srgb_to_oklab(ambient_dir);
+            lab_ambient_dir.x = lab_shmax.x;
+            ambient_col = oklab_to_linear_srgb(lab_ambient_dir);
+        } else {
+            lab_sh_dc.x = lab_shmax.x;
+            ambient_col = oklab_to_linear_srgb(lab_sh_dc);
+        }
+        
     } else {
-        lab_sh_dc.x = lab_shmax.x;
-        ambient_col = oklab_to_linear_srgb(lab_sh_dc);
-    }
-    // return float4(ambient_col, 1);
+        // https://github.com/lilxyzw/lilToon/blob/31c6e3936d0571207935a4395c3374e25b82c009/Assets/lilToon/Shader/Includes/openlit_core.hlsl#L65C8-L65C8
+        // SH magic from OpenLit / LilToon:
+        float3 sh9Dir = unity_SHAr.xyz * 0.333333 + unity_SHAg.xyz * 0.333333 + unity_SHAb.xyz * 0.333333;
+        float3 lightDirectionForSH9 = dot(sh9Dir,sh9Dir) < 0.000001 ? 0 : normalize(sh9Dir);
+        ShadeSH9ToonDouble(lightDirectionForSH9, sh_max, sh_min, sh_dc);
+        // return float4(sh_dc, 1);
+        float3 lab_sh_dc = linear_srgb_to_oklab(sh_dc);
+        float3 lab_shmax = linear_srgb_to_oklab(sh_max);
+        [branch] if(_SHDirectionalColor) {
+            float3 lab_ambient_dir = linear_srgb_to_oklab(ambient_dir);
+            // blend dark colors towards sh_dc to prevent uglyness
+            // float dark = smoothstep(0,1,saturate((lab_ambient_dir.x - .10) * 5));
+            float dark = saturate((lab_ambient_dir.x - .2) * 3);
+            // return float4(dark.xxx, 1);
+            lab_ambient_dir.yz = lerp(lab_sh_dc.yz, lab_ambient_dir.yz, dark);
+            // lab_ambient_dir.yz *= smoothstep(0,1,saturate((lab_ambient_dir.x - .05) * 10));
+            lab_ambient_dir.x = lab_shmax.x;
+            ambient_col = oklab_to_linear_srgb(lab_ambient_dir);
+        } else {
+            lab_sh_dc.x = lab_shmax.x;
+            ambient_col = oklab_to_linear_srgb(lab_sh_dc);
+        }
+        // return float4(ambient_col, 1);
+    }    
     
     float diffuse_ambient = inv_lerp(luminance(sh_min), luminance(sh_max), luminance(ambient_dir));
     diffuse_ambient = saturate(diffuse_ambient); // fix weird lines :)
@@ -564,8 +584,8 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     // float3 col_rgb = oklab_to_linear_srgb(col_lab) * lighting_rgb;
     // col.rgb = lerp(col_rgb, col.rgb, 1);
     #ifdef TOONKU_FIREWORKS
-    col.rgb = max(col.rgb, do_fireworks(input));
-    col.rgb = max(col.rgb, do_the_thing(i));
+    emit = max(emit, do_fireworks(input));
+    emit = max(emit, do_the_thing(i));
     // return float4(do_the_thing(i), 1);
     // return float4(year(input.uv, 4, float2(0,0)),1);
     #endif
@@ -580,11 +600,16 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     
     float roughness = tex2D(_RoughnessTex, i.uv) * _Roughness;
     float envmapmul = tex2D(_EnvMapMaskTex, i.uv) * _EnvMapMask;
-    spec += envmapmul * env_spec(i.normal, i.wpos, i.color, metalness, roughness) * lerp(float4(1.0.xxxx), i.vertex_color, _MultiplySpecularByVertexCol);
+    float3 lv_spec = 0;
+    if(have_light_volumes) lv_spec = LightVolumeSpecular(i.color, 1 - roughness, metalness, i.normal, i.view_dir, L0, L1r, L1g, L1b);
+    
+    // return float4(lv_spec, 1); 
+    
+    spec += envmapmul * (env_spec(i.normal, i.wpos, i.color, metalness, roughness) + lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol);
     // float3 pt = input.tangent;
     // col.rgb = float3(-pt.x,-pt.z,pt.y); // blender tangents?
 #ifdef ALPHA
-    col.rgb = saturate(diff) + saturate(spec);
+    col.rgb = saturate(diff) + saturate(spec) + saturate(emit);
     col.a = saturate(i.color.a + luminance(spec));
     // col.rgb = lerp(saturate(spec), saturate(diff) + saturate(spec), i.color.a);
     // col.a = saturate(i.color.a + max_component(spec));
@@ -592,7 +617,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     // col.a = i.color.a;
 #else
     // col.rgb = max(diff,0) + max(spec,0);
-    // col.rgb = saturate(diff) + saturate(spec);
+    col.rgb = saturate(diff) + saturate(spec) + saturate(emit);
     col.a = i.color.a;
 #endif
     
