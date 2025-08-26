@@ -499,7 +499,9 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     [branch] if(have_light_volumes) {
         LightVolumeSH(i.wpos, L0, L1r, L1g, L1b);
         ambient_dir = LightVolumeEvaluate(i.normal, L0, L1r, L1g, L1b);
-        float3 lv_dir = normalize(normalize(L1r) + normalize(L1g) + normalize(L1b));
+        // aciil said to do normalize the sh vectors first but idk if i want to 
+        // float3 lv_dir = normalize(normalize(L1r) + normalize(L1g) + normalize(L1b)); 
+        float3 lv_dir = normalize(L1r + L1g + L1b);
         // return dot(lv_dir, i.normal);
         SH_Eval_01(lv_dir, L0, L1r, L1g, L1b, sh_max, sh_min, sh_dc);
         float3 lab_sh_dc = linear_srgb_to_oklab(sh_dc);
@@ -510,8 +512,13 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
             lab_ambient_dir.x = lab_shmax.x;
             ambient_col = oklab_to_linear_srgb(lab_ambient_dir);
         } else {
-            lab_sh_dc.x = lab_shmax.x;
-            ambient_col = oklab_to_linear_srgb(lab_sh_dc);
+            // doesnt really work nicely with light volumes
+            // lab_sh_dc.x = lab_shmax.x;
+            // ambient_col = oklab_to_linear_srgb(lab_sh_dc);
+            
+            // lets try something different
+            float diff = inv_lerp(luminance(sh_min), luminance(sh_max), luminance(ambient_dir));
+            ambient_col = lerp(sh_min, sh_max, smoothstep(0,1,saturate((diff-.5)*2+1)));
         }
         
     } else {
