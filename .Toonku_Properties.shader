@@ -9,6 +9,7 @@
 		[NoScaleOffset] _MetalnessTex("Metalness Texture", 2D) = "white" {}
 		[ToggleUI] _MetalnessDiffuseMask ("Metalness as Diffuse Mask", Float) = 0
 		_Roughness("Roughness", range(0,1)) = 0.5
+		_RoughnessMin("RoughnessMin", range(0,1)) = 0
 		[NoScaleOffset] _RoughnessTex("Roughness Texture", 2D) = "white" {}
 		_EnvMapMask("Environment Mapping", range(0,1)) = 0
 		[NoScaleOffset] _EnvMapMaskTex("Environment Mapping Mask", 2D) = "white" {}
@@ -40,6 +41,11 @@
 		_FresnelLightRingMul("Fresnel light ring mul", range(-2,2)) = 1
 		[ToggleUI] _FresnelLightRingMode ("Fresnel light ring mode", Float) = 0
 		
+		[Space]
+		_FresnelAlphaValue("Fresnel alpha value", range(0,1)) = 1
+		_FresnelAlphaStart("Fresnel alpha start", range(0,1)) = 1
+		_FresnelAlphaEnd("Fresnel alpha end", range(0,1)) = 1
+		
 		[Header(Color Adjustment)]
 		[Space]
 		_LightnessMul("Lightness/Value Multiplier", Range(-3, 3)) = 1
@@ -64,6 +70,8 @@
 		[ToggleUI] _UseSH("Use Spherical Harmonics", Float) = 1
 		[ToggleUI] _UseRealtimeLights("Use Realtime Lights", Float) = 1
 		[ToggleUI] _SHDirectionalColor("Spherical Harmonics directional color", Float) = 0
+		[ToggleUI] _LegacyShading("Legacy shading", Float) = 0
+		[ToggleUI] _UseLightVolumes("Use Light Volumes", Float) = 1
 		
 		[HideInInspector] _HueShift1("",Float) = 0
 		[HideInInspector] _HueShift2("",Float) = 0

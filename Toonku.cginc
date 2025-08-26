@@ -17,6 +17,7 @@ sampler2D _GrabTexture;
 float _Metalness;
 float _MetalnessDiffuseMask;
 float _Roughness;
+float _RoughnessMin;
 float _EnvMapMask;
 float _AlphaClip;
 float _SHLightColorDir;
@@ -39,6 +40,7 @@ float _FresnelLightRingEnd;
 float _FresnelLightRingMode;
 float _FresnelLightRingMul;
 float _FresnelLightAmount;
+float _FresnelAlphaValue, _FresnelAlphaStart, _FresnelAlphaEnd;
 sampler2D _FresnelLightMaskTex;
 float _FresnelLightTint;
 float _AnimIdx;
@@ -55,7 +57,8 @@ float _Toggle1;
 float _Toggle2;
 float _Debug;
 float _LightingOverride;
-float _UseSH, _UseRealtimeLights;
+float _UseSH, _UseRealtimeLights, _UseLightVolumes;
+float _LegacyShading;
 float _GeomAngle;
 
 // #ifdef XMASLIGHTS
@@ -343,6 +346,11 @@ float3 shading(ToonkuData i, float diffuse, float fresnel_light_mask) {
     return shading_diff_spec(i, diffuse, fresnel_light_mask, diff, spec);
 }
 
+float shading_alpha(ToonkuData i) {
+    float f = smoothstep(_FresnelAlphaStart, _FresnelAlphaEnd, i.fresnel);
+    return i.color.a * lerp(_FresnelAlphaValue, 1, f);
+}
+
 float3 hsv_adjust(ToonkuData i, float3 col, float3 hue) {
     float hue_shift = hue.x, hue_shift_anim = hue.y, hue_shift_fresnel = hue.z;
     
@@ -439,8 +447,11 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 #ifdef XMASLIGHTS
     float3 grab = tex2D(_GrabTexture, screen_uv - i.vnormal.xy*0.01*i.pos.z);
     // col.rgb += grab * input.color;
-    // return float4(saturate(grab-1), 1);
-    i.color.rgb = lerp(grab * input.color, input.color, 0.02) + saturate(grab-1)*100;
+    // return float4(saturate(grab), 1);
+    i.color.rgb = lerp(grab * input.color, input.color, 0.02) + saturate(min(grab.x, min(grab.y, grab.z))-1)*10;
+    // i.color.rgb = lerp(grab * input.color, input.color, 0.02);
+    // return float4(saturate(grab-1)*100,1);
+    // return float4(grab * input.color,1);
 #endif
     // return i.pos.z;
     // return i.color;
@@ -478,16 +489,18 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 
     float4 col = 1;
     float3 diff = 0, spec = 0, emit = 0;
-    float have_light_volumes = _UdonLightVolumeEnabled && _UdonLightVolumeCount != 0;
+    float have_light_volumes = (_UseLightVolumes && _UdonLightVolumeEnabled && _UdonLightVolumeCount) != 0;
     float3 L0 = 0, L1r = 0, L1g = 0, L1b = 0; 
 #ifdef BASEPASS
-    float3 ambient_dir = max(0,ShadeSH9(float4(i.normal, 1)));
+    float3 ambient_dir = 0;
     float3 ambient_col = 0;
     float3 sh_min, sh_max, sh_dc;
     
     [branch] if(have_light_volumes) {
         LightVolumeSH(i.wpos, L0, L1r, L1g, L1b);
+        ambient_dir = LightVolumeEvaluate(i.normal, L0, L1r, L1g, L1b);
         float3 lv_dir = normalize(L1r + L1g + L1b);
+        // return dot(lv_dir, i.normal);
         SH_Eval_01(lv_dir, L0, L1r, L1g, L1b, sh_max, sh_min, sh_dc);
         float3 lab_sh_dc = linear_srgb_to_oklab(sh_dc);
         float3 lab_shmax = linear_srgb_to_oklab(sh_max);
@@ -502,10 +515,12 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         }
         
     } else {
+        ambient_dir = max(0,ShadeSH9(float4(i.normal, 1)));
         // https://github.com/lilxyzw/lilToon/blob/31c6e3936d0571207935a4395c3374e25b82c009/Assets/lilToon/Shader/Includes/openlit_core.hlsl#L65C8-L65C8
         // SH magic from OpenLit / LilToon:
         float3 sh9Dir = unity_SHAr.xyz * 0.333333 + unity_SHAg.xyz * 0.333333 + unity_SHAb.xyz * 0.333333;
         float3 lightDirectionForSH9 = dot(sh9Dir,sh9Dir) < 0.000001 ? 0 : normalize(sh9Dir);
+        // return dot(lightDirectionForSH9, i.normal);
         ShadeSH9ToonDouble(lightDirectionForSH9, sh_max, sh_min, sh_dc);
         // return float4(sh_dc, 1);
         float3 lab_sh_dc = linear_srgb_to_oklab(sh_dc);
@@ -544,38 +559,39 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     // col.rgb *= lighting_rgb;
     float3 diff_ambient = 0, spec_ambient = 0;
     float3 col_ambient = shading_diff_spec(i, diffuse_ambient, fresnel_light_mask, diff_ambient, spec_ambient);
+    // return all(col_ambient == diff_ambient + spec_ambient);
+    float3 aaa = col_ambient;
     col_ambient = color_adjust(i, saturate(col_ambient), input.hue);
+    // return all(col_ambient == aaa);
+    diff_ambient = color_adjust(i, saturate(diff_ambient), input.hue);
+    spec_ambient = color_adjust(i, saturate(spec_ambient), input.hue);
+    // return all(col_ambient == (diff_ambient + spec_ambient));
+    // return float4(-(col_ambient - (diff_ambient + spec_ambient)), 1);
     col_ambient *= max(saturate(ambient_col), _MinLight.xxx);
     col_ambient = lerp(0, col_ambient, _UseSH);
     
-    diff_ambient = color_adjust(i, saturate(diff_ambient), input.hue);
     diff_ambient *= max(saturate(ambient_col), _MinLight.xxx);
     diff_ambient = lerp(0, diff_ambient, _UseSH);
     
-    spec_ambient = color_adjust(i, saturate(spec_ambient), input.hue);
     spec_ambient *= max(saturate(ambient_col), _MinLight.xxx);
     spec_ambient = lerp(0, spec_ambient, _UseSH);
     
-    float3 diff_wl = 0, spec_wl = 0;
-    float3 col_wl = shading_diff_spec(i, diffuse_wl, fresnel_light_mask, diff_wl, spec_wl);
-    col_wl = color_adjust(i, saturate(col_wl), input.hue);
-    col_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
-    col_wl = lerp(0, col_wl, _UseRealtimeLights);
-    
-    diff_wl = color_adjust(i, saturate(diff_wl), input.hue);
-    diff_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
-    diff_wl = lerp(0, diff_wl, _UseRealtimeLights);
-    spec_wl = color_adjust(i, saturate(spec_wl), input.hue);
+    float3 diff_wl = 0, spec_wl = 0, col_wl = 0;
+    [branch] if(_UseRealtimeLights) {
+        col_wl = shading_diff_spec(i, diffuse_wl, fresnel_light_mask, diff_wl, spec_wl);
+        col_wl = color_adjust(i, saturate(col_wl), input.hue);
+        col_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
+        
+        diff_wl = color_adjust(i, saturate(diff_wl), input.hue);
+        diff_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
 
-    spec_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
-    spec_wl = lerp(0, spec_wl, _UseRealtimeLights);
+        spec_wl = color_adjust(i, saturate(spec_wl), input.hue);
+        spec_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
+    }
     
     diff = max(diff_ambient, diff_wl);
     spec = max(spec_ambient, spec_wl);
-    
     col.rgb = max(col_ambient, col_wl);
-
-    
     // float3 col_lab = linear_srgb_to_oklab(col);
     // float3 lighting_lab = linear_srgb_to_oklab(lighting_rgb);
     // col_lab.x *= lighting_lab.x;
@@ -587,25 +603,49 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     emit = max(emit, do_fireworks(input));
     emit = max(emit, do_the_thing(i));
     // return float4(do_the_thing(i), 1);
-    // return float4(year(input.uv, 4, float2(0,0)),1);
+    // return float4(year(input.uv, 4, float2(0,0)),1); 
     #endif
 #endif
     
 #ifdef ADDPASS
-    col.rgb = shading(i, diffuse_wl, fresnel_light_mask);
-    col.rgb = color_adjust(i, col, input.hue);
-    col.rgb *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
+    float3 diff_wl = 0, spec_wl = 0, col_wl = 0;
+    [branch] if(_UseRealtimeLights) {
+        col_wl = shading_diff_spec(i, diffuse_wl, fresnel_light_mask, diff_wl, spec_wl);
+        col_wl = color_adjust(i, saturate(col_wl), input.hue);
+        col_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
+        
+        diff_wl = color_adjust(i, saturate(diff_wl), input.hue);
+        diff_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
+
+        spec_wl = color_adjust(i, saturate(spec_wl), input.hue);
+        spec_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
+        
+    }
+    col.rgb = col_wl;
+    diff = diff_wl;
+    spec = spec_wl;
 #endif
     
     
     float roughness = tex2D(_RoughnessTex, i.uv) * _Roughness;
+    roughness = max(roughness, _RoughnessMin);
     float envmapmul = tex2D(_EnvMapMaskTex, i.uv) * _EnvMapMask;
     float3 lv_spec = 0;
-    if(have_light_volumes) lv_spec = LightVolumeSpecular(i.color, 1 - roughness, metalness, i.normal, i.view_dir, L0, L1r, L1g, L1b);
+    if(have_light_volumes) {
+        lv_spec = LightVolumeSpecular(i.color, 1 - roughness, metalness, i.normal, i.view_dir, L0, L1r, L1g, L1b);
+        lv_spec = col_spec(i.normal, i.wpos, lv_spec, metalness).rgb;
+        // return float4(lv_spec, 1);
+    }
+    // TODO: Specular filtering
+    // I have no idea how
+     
+    // float3 dxspec = clamp(fwidth(lv_spec.rgb), -1, 1);
+    // return float4(max_component(fwidth(lv_spec.rgb)).xxx, 1); 
+    // return float4(lv_spec*lerp(1, 0.2, dxspec), 1); 
+    // lv_spec *= lerp(1, 0.5, dxspec); 
+    // lv_spec *= 0.9; 
     
-    // return float4(lv_spec, 1); 
-    
-    spec += envmapmul * (env_spec(i.normal, i.wpos, i.color, metalness, roughness) + lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol);
+    spec += envmapmul * max(saturate(env_spec(i.normal, i.wpos, i.color, metalness, roughness)), lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol);
     // float3 pt = input.tangent;
     // col.rgb = float3(-pt.x,-pt.z,pt.y); // blender tangents?
 #ifdef ALPHA
@@ -616,8 +656,14 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     // col.a = lerp(i.color.a, 1, luminance(spec));
     // col.a = i.color.a;
 #else
+    if(_LegacyShading) {
+        col.rgb += saturate(spec);
+        // col.rgb = col_ambient;
+    } else {
+        col.rgb = saturate(diff) + saturate(spec) + saturate(emit);
+        // col.rgb = spec_ambient;
+    }
     // col.rgb = max(diff,0) + max(spec,0);
-    col.rgb = saturate(diff) + saturate(spec) + saturate(emit);
     col.a = i.color.a;
 #endif
     
@@ -626,6 +672,8 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 #endif
     col.rgb += tex2D(_EmissionTex, i.uv) * _EmissionMul;
     col.rgb *= _FinalBrightness;
+
+    col.a = shading_alpha(i);
 
     float3 dithering = (ditherNoiseFuncHigh(screen_uv) - 0.5) * 2 * 0.002;
     col.rgb = max(col.rgb + dithering, float3(0,0,0));

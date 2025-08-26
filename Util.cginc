@@ -19,30 +19,41 @@ float3 boxproject(float3 dir, float3 wpos) {
     return dir;
 }
 
-half4 fresnel_laku(float3 normal, float4 wpos, half4 f0) {
+float4 fresnel_laku(float3 normal, float4 wpos, float4 f0) {
     float3 n = normal;
     float3 v = normalize(_WorldSpaceCameraPos.xyz - wpos.xyz);
     float3 l = reflect(-v, normal);
     float3 h = normalize(l + v);
     float vdoth = dot(v, h);
-    half4 f = f0 + (1-f0)*pow(1-vdoth,5);
+    float4 f = f0 + (1-f0)*pow(1-vdoth,5);
     return f;
     float ndotv = dot(n, v);
 }
 
-half4 envmap(float3 reflection_dir, float roughness) {
+float4 envmap(float3 reflection_dir, float roughness) {
     float4 env = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, reflection_dir, roughness*6);
-    return half4(DecodeHDR(env, unity_SpecCube0_HDR),1);
+    return float4(DecodeHDR(env, unity_SpecCube0_HDR),1);
 }
 
-half4 env_spec(float3 normal, float4 wpos, float4 color, float metallic, float roughness) {
+float4 env_spec(float3 normal, float4 wpos, float4 color, float metallic, float roughness) {
     //return 0;
     float3 view_dir_w = normalize(_WorldSpaceCameraPos - wpos);
     float3 refl_dir_w = reflect(-view_dir_w, normal);
-    half4 env = envmap(boxproject(refl_dir_w, wpos), roughness);
-    half4 f0 = lerp(0.04, color, metallic);
-    half4 f = fresnel_laku(normal, wpos, f0);
-    half4 spec = env * f;
+    float4 env = envmap(boxproject(refl_dir_w, wpos), roughness);
+    float4 f0 = lerp(0.04, color, metallic);
+    float4 f = fresnel_laku(normal, wpos, f0);
+    float4 spec = env * f;
+    // return max(0,spec); 
+    // Did you know environment maps can have values above 1? I sure didn't!
+    return saturate(spec);
+}
+
+float3 col_spec(float3 normal, float4 wpos, float3 color, float metallic) {
+    //return 0;
+    float3 view_dir_w = normalize(_WorldSpaceCameraPos - wpos);
+    float3 f0 = lerp(0, color, metallic);
+    float3 f = fresnel_laku(normal, wpos, float4(f0,1)).rgb;
+    float3 spec = f * color;
     // return max(0,spec); 
     // Did you know environment maps can have values above 1? I sure didn't!
     return saturate(spec);
