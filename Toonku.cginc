@@ -499,7 +499,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     [branch] if(have_light_volumes) {
         LightVolumeSH(i.wpos, L0, L1r, L1g, L1b);
         ambient_dir = LightVolumeEvaluate(i.normal, L0, L1r, L1g, L1b);
-        float3 lv_dir = normalize(L1r + L1g + L1b);
+        float3 lv_dir = normalize(normalize(L1r) + normalize(L1g) + normalize(L1b));
         // return dot(lv_dir, i.normal);
         SH_Eval_01(lv_dir, L0, L1r, L1g, L1b, sh_max, sh_min, sh_dc);
         float3 lab_sh_dc = linear_srgb_to_oklab(sh_dc);
