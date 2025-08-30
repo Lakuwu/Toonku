@@ -19,20 +19,22 @@
 		[Header(Toon shading values)]
 		[Space]
 		_DiffShadeColor("Diffuse shade color", Color) = (1,1,1,1)
+		_DiffShadeColTint("Diffuse shade color tint", range(0,1)) = 0.0
 		_DiffShadeStart("Diffuse shade start", range(-1,1)) = 0.0
 		_DiffShadeEnd("Diffuse shade end", range(-1,1)) = 0.5
 		
 		[Space]
+		[Toggle] _FRESNEL_REFLECT("Fresnel -> Reflect mode", Float) = 0
 		_FresnelShadeColor("Fresnel shade color", Color) = (1,1,1,1)
-		_FresnelShadeStart("Fresnel shade start", range(0,1)) = 0.3
-		_FresnelShadeEnd("Fresnel shade end", range(0,1)) = 0.5
+		_FresnelShadeStart("Fresnel shade start", range(-1,1)) = 0.3
+		_FresnelShadeEnd("Fresnel shade end", range(-1,1)) = 0.5
 		
 		[Space]
 		_FresnelLightAmount("Fresnel light amount", range(0,3)) = 0.1
         [NoScaleOffset] _FresnelLightMaskTex("Fresnel light Mask", 2D) = "white" {}
 		_FresnelLightColor("Fresnel light color", Color) = (1,1,1,1)
-		_FresnelLightStart("Fresnel light start", range(0,1)) = 0.3
-		_FresnelLightEnd("Fresnel light end", range(0,1)) = 0.5
+		_FresnelLightStart("Fresnel light start", range(-1,1)) = 0.3
+		_FresnelLightEnd("Fresnel light end", range(-1,1)) = 0.5
 		_FresnelLightTint("Fresnel light tint", range(0,1)) = 0
 		
 		[Space]
@@ -55,6 +57,13 @@
 		[ToggleUI] _HueShiftFresnel ("Fresnel Hue Shift", Float) = 0
 		[ToggleUI] _UseHSV("Use HSV instead of OKLAB", Float) = 0
 		[NoScaleOffset] _HSVMaskTex("HSV Mask", 2D) = "white" {}
+		
+		[Header(Specular Iridescent)]
+		[Space]
+		[Toggle] _IRIDESCENT("Enable", Float) = 0
+		_IridescentFresnelMul("FresnelMul", Float) = 1
+		_IridescentMul("Mul", Float) = 1
+		[NoScaleOffset] _IridescentTex("Texture", 2D) = "white" {}
 		
 		[Header(Misc)]
 		[Space]

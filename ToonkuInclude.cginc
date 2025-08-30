@@ -20,6 +20,7 @@ struct ToonkuData {
     float4 vertex_color;
     float4 color;
     float fresnel;
+    float reflect;
     float3 view_dir;
     float3 vnormal;
     float metalness;

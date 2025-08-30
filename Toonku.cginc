@@ -4,6 +4,15 @@
 #include "Util.cginc"
 #include "ToonkuInclude.cginc"
 
+#pragma shader_feature_local _IRIDESCENT_ON
+#pragma shader_feature_local _FRESNEL_REFLECT_ON
+
+#if _IRIDESCENT_ON
+#ifdef BASEPASS
+#define DO_IRIDESCENT
+#endif
+#endif
+
 sampler2D _MainTex;
 sampler2D _EmissionTex;
 float _EmissionMul;
@@ -27,6 +36,7 @@ float _SpecMul;
 float _SpecSmooth;
 half4 _Color;
 half4 _DiffShadeColor;
+float _DiffShadeColTint;
 float _DiffShadeStart;
 float _DiffShadeEnd;
 half4 _FresnelShadeColor;
@@ -60,6 +70,11 @@ float _LightingOverride;
 float _UseSH, _UseRealtimeLights, _UseLightVolumes;
 float _LegacyShading;
 float _GeomAngle;
+
+#if _IRIDESCENT_ON
+sampler2D _IridescentTex;
+float _IridescentFresnelMul, _IridescentMul;
+#endif
 
 // #ifdef XMASLIGHTS
 float _WarmWhite, _GamerRGB;
@@ -317,11 +332,24 @@ float4 sample_maintex(ToonkuData i) {
 float3 specular(ToonkuData i) {
     return 1;
 }
+#if _IRIDESCENT_ON
+float3 iridescent(ToonkuData i) {
+    float3 hsv;
+    hsv.z = 1;
+    // hsv.y = 0.5541675;
+    hsv.y = 0.7;
+    hsv.x = frac(i.reflect * _IridescentFresnelMul -2.16);
+    float3 irid = hsv2rgb(hsv) * _IridescentMul;
+    return lerp(1.0.xxx, irid, tex2D(_IridescentTex, i.uv).y);
+}
+#endif
+
 
 float3 shading_diff_spec(ToonkuData i, float diffuse, float fresnel_light_mask, out float3 diff, out float3 spec) {
     float3 albedo_col = i.color.rgb;
     float diffuse_shade = smoothstep(_DiffShadeStart, _DiffShadeEnd, diffuse);
-    float3 diffuse_col = albedo_col * lerp(_DiffShadeColor, float3(1,1,1), diffuse_shade) * (1-i.metalness * _MetalnessDiffuseMask);
+    float3 diffuse_shade_col = lerp(_DiffShadeColor, _DiffShadeColor * albedo_col, _DiffShadeColTint);
+    float3 diffuse_col = albedo_col * lerp(diffuse_shade_col, float3(1,1,1), diffuse_shade) * (1-i.metalness * _MetalnessDiffuseMask);
     float fresnel_shade = smoothstep(_FresnelShadeStart, _FresnelShadeEnd, i.fresnel);
     float3 fresnel_shade_col = lerp(_FresnelShadeColor, float3(1,1,1), fresnel_shade);
     float fresnel_light_ring = smoothstep(_FresnelLightRingStart, _FresnelLightRingEnd, i.fresnel);
@@ -439,6 +467,10 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     i.normal = normalize(i.normal);
     i.view_dir = normalize(_WorldSpaceCameraPos - i.wpos.xyz);
     i.fresnel = dot(i.normal, i.view_dir);
+    i.reflect =  dot(reflect(-i.view_dir, i.normal), i.view_dir);
+    #if _FRESNEL_REFLECT_ON
+    i.fresnel = i.reflect;
+    #endif
     i.color = lerp(half4(1,1,1,1), sample_maintex(i), _TexInfluence) * _Color;
     i.vnormal = normalize(input.vnormal);
     float metalness = tex2D(_MetalnessTex, i.uv) * _Metalness;
@@ -663,7 +695,19 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     // lv_spec *= lerp(1, 0.5, dxspec); 
     // lv_spec *= 0.9; 
     
-    spec += envmapmul * max(saturate(env_spec(i.normal, i.wpos, i.color, metalness, roughness)), lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol);
+    float3 spec_env = envmapmul * max(saturate(env_spec(i.normal, i.wpos, i.color, metalness, roughness)), lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol);
+    
+    #ifdef DO_IRIDESCENT
+    float3 spec_env_irid = envmapmul * max(saturate(env_spec(i.normal, i.wpos, 1.0.xxxx, 1, roughness)), lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol) * iridescent(i);
+    // spec *= iridescent(i);
+    // spec *= iridescent(i);
+    spec_env = lerp(spec_env, spec_env_irid, tex2D(_IridescentTex, i.uv).x);
+    spec = lerp(spec, spec * iridescent(i), tex2D(_IridescentTex, i.uv).x);
+    // diff *= lerp(1, 0.5, tex2D(_IridescentTex, i.uv).x);
+    // diff = 0;
+    // spec_env = 0;
+    #endif
+    spec += spec_env;
     // float3 pt = input.tangent;
     // col.rgb = float3(-pt.x,-pt.z,pt.y); // blender tangents?
 #ifdef ALPHA
@@ -679,6 +723,12 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         // col.rgb = col_ambient;
     } else {
         col.rgb = saturate(diff) + saturate(spec) + saturate(emit);
+        #ifdef DO_IRIDESCENT
+        float irid_diff_mul = lerp(0.5, 1, pow(saturate(diffuse_ambient + diffuse_wl), 0.5));
+        float3 irid_rgb = (diff*.8) + (spec * irid_diff_mul) + saturate(emit);
+        col.rgb = lerp(col.rgb, irid_rgb, tex2D(_IridescentTex, i.uv).x);
+        // col.rgb = diff;
+        #endif
         // col.rgb = spec_ambient;
     }
     // col.rgb = max(diff,0) + max(spec,0);
