@@ -544,24 +544,18 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
             lab_ambient_dir.x = lab_shmax.x;
             ambient_col = oklab_to_linear_srgb(lab_ambient_dir);
         } else {
-            // doesnt really work nicely with light volumes
-            // lab_sh_dc.x = lab_shmax.x;
-            // ambient_col = oklab_to_linear_srgb(lab_sh_dc);
-            // ambient_col = sh_min;
-            
-            // lets try something different
+            /*
             // looks kinda ok but idk man
             float diff = inv_lerp(luminance(sh_min), luminance(sh_max), luminance(ambient_dir));
+            float f = smoothstep(_DiffShadeStart, _DiffShadeEnd, diff);
             // float f =  smoothstep(0,1,saturate((diff-.5)*2+1));
-            float f =  pow(saturate((diff-.5)*4+2), .6);
+            // float f =  pow(saturate((diff-.5)*4+2), .6);
             float3 sh_mix = lerp(sh_min, sh_dc, 0.6);
-            // ambient_col = lerp(sh_min*_DiffShadeColor , sh_max, f);
             ambient_col = lerp(sh_mix*_DiffShadeColor , sh_max, f);
-            // ambient_col = lerp(sh_dc*_DiffShadeColor , sh_max, f);
-            // ambient_col = lerp(sh_min , sh_max, f);
+            */
             
-            // what if i just
-            // ambient_col = ambient_dir;
+            // liltoon emulation, basically ignoring LV totally lmao, looks 1000x better than what I tried
+            ambient_col = LightVolumeEvaluate(i.view_dir, L0, L1r, L1g, L1b);
         }
         
     } else {
@@ -586,8 +580,9 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
             lab_ambient_dir.x = lab_shmax.x;
             ambient_col = oklab_to_linear_srgb(lab_ambient_dir);
         } else {
-            lab_sh_dc.x = lab_shmax.x;
-            ambient_col = oklab_to_linear_srgb(lab_sh_dc);
+            // lab_sh_dc.x = lab_shmax.x;
+            // ambient_col = oklab_to_linear_srgb(lab_sh_dc);
+            ambient_col = sh_max;
         }
         // return float4(ambient_col, 1);
     }    
