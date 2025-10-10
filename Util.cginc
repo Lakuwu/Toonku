@@ -303,7 +303,7 @@ float3 lch_to_lsrgb(float3 c) {
 }
 
 void ShadeSH9ToonDouble(float3 lightDirection, out float3 sh_max, out float3 sh_min, out float3 sh_dc) {
-    float3 N = lightDirection * 0.666666;
+    float3 N = lightDirection;
     float4 vB = N.xyzz * N.yzzx;
     // L0 L2
     float3 res = float3(unity_SHAr.w,unity_SHAg.w,unity_SHAb.w);
