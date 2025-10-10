@@ -338,7 +338,7 @@ float3 iridescent(ToonkuData i) {
     hsv.z = 1;
     // hsv.y = 0.5541675;
     hsv.y = 0.7;
-    hsv.x = frac(i.reflect * _IridescentFresnelMul -2.16);
+    hsv.x = frac(i.reflect * _IridescentFresnelMul -2.16 + _Time.x);
     float3 irid = hsv2rgb(hsv) * _IridescentMul;
     return lerp(1.0.xxx, irid, tex2D(_IridescentTex, i.uv).y);
 }
