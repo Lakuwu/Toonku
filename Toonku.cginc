@@ -71,6 +71,10 @@ float _UseSH, _UseRealtimeLights, _UseLightVolumes;
 float _LegacyShading;
 float _GeomAngle;
 
+float _UdonSyncTime;
+
+static float4 Time = 0;
+
 #if _IRIDESCENT_ON
 sampler2D _IridescentTex;
 float _IridescentFresnelMul, _IridescentMul;
@@ -183,7 +187,7 @@ float4 xmaslight(v2fa v) {
             // gamer rgb
             const float num_lights = 81;
             float r = idx / num_lights;
-            float f = TWO_PI * (r * 2 + _Time.y * .5);
+            float f = TWO_PI * (r * 2 + Time.y * .5);
             lch = float3(1.5,.7, f);
             break;
         }
@@ -191,11 +195,11 @@ float4 xmaslight(v2fa v) {
     return float4(lch_to_lsrgb(lch), 1);
     // float4 col = 1;
     // float f = (TWO_PI / num_colors) * idx;
-    // float f = (TWO_PI / num_colors) * idx + floor((r * num_colors) + _Time.y * .5);
-    // float f = floor(frac(r * 2) + _Time.y * .3);
-    // float f = floor(_Time.y*5 + idx * 0.01);
-    // float t = floor(_Time.y);
-    // float t = (_Time.x);
+    // float f = (TWO_PI / num_colors) * idx + floor((r * num_colors) + Time.y * .5);
+    // float f = floor(frac(r * 2) + Time.y * .3);
+    // float f = floor(Time.y*5 + idx * 0.01);
+    // float t = floor(Time.y);
+    // float t = (Time.x);
     // float t = 0;
     // float3 lch = float3(1.1,.5, f + t);
     // col = float4(idx % 2, 0, 0, 1);
@@ -233,18 +237,18 @@ void geom(triangle appdata v[3], inout TriangleStream<v2fa> output) {
 #else
 
 v2fa vert(appdata v) {
-    // v.pos.xyz = v.pos.xyz + snoise3(v.pos.xyz + _Time.y * 60) * v.normal * .01;
-    // float t = _Time.y;
+    // v.pos.xyz = v.pos.xyz + snoise3(v.pos.xyz + Time.y * 60) * v.normal * .01;
+    // float t = Time.y;
     // float s = .05;
     // v.pos.x += (rand1(v.pos.x + t)*2-1) * s * pow(sin01(v.pos.y * 32 + t * 8),10);
     // v.pos.z += (rand1(v.pos.z + t)*2-1) * s * pow(sin01(v.pos.y * 32 + t * 8),10);
     // v.pos.y += (rand1(v.pos.y + t)*2-1) * s * pow(sin01(v.pos.y * 32 + t * 8),10);
     
-    // float4 q2 = angle_axis(sin(_Time.x * 10) * v.pos.y * 2, float3(0,0,1));
-    // float4 q = angle_axis(_Time.x * 10 - length(v.pos.xz) * 2 + sin(_Time.x * 10) * v.pos.y * 5, float3(0,1,0));
+    // float4 q2 = angle_axis(sin(Time.x * 10) * v.pos.y * 2, float3(0,0,1));
+    // float4 q = angle_axis(Time.x * 10 - length(v.pos.xz) * 2 + sin(Time.x * 10) * v.pos.y * 5, float3(0,1,0));
     // float4 qq = hamilton_product(q, q2);
-    // float4 q0 = angle_axis(_Time.x * 10, float3(0,1,0));
-    // float4 q1 = angle_axis(_Time.x * 10, float3(1,0,0));
+    // float4 q0 = angle_axis(Time.x * 10, float3(0,1,0));
+    // float4 q1 = angle_axis(Time.x * 10, float3(1,0,0));
     // float4 qq = hamilton_product(q1, q0);
     // v.pos.xyz = rotate(v.pos.xyz, qq);
     // v.normal = rotate(v.normal, qq);
@@ -284,8 +288,8 @@ float robe_f1(float2 uv, float t) {
 
 float robepattern(ToonkuData i) {
     float3 col;
-    float t0 = _Time.x * .05 + 3;
-    float t1 = -_Time.x * .03 + 3;
+    float t0 = Time.x * .05 + 3;
+    float t1 = -Time.x * .03 + 3;
     
     float2 uvdx = float2(ddx(i.uv.x), ddy(i.uv.x)) * .25;
     float2 uvdy = float2(ddx(i.uv.y), ddy(i.uv.y)) * .25;
@@ -338,7 +342,7 @@ float3 iridescent(ToonkuData i) {
     hsv.z = 1;
     // hsv.y = 0.5541675;
     hsv.y = 0.7;
-    hsv.x = frac(i.reflect * _IridescentFresnelMul -2.16 + _Time.x);
+    hsv.x = frac(i.reflect * _IridescentFresnelMul -2.16 + Time.x);
     float3 irid = hsv2rgb(hsv) * _IridescentMul;
     return lerp(1.0.xxx, irid, tex2D(_IridescentTex, i.uv).y);
 }
@@ -384,7 +388,7 @@ float3 hsv_adjust(ToonkuData i, float3 col, float3 hue) {
     
     float3 col_hsv = rgb2hsv(col.rgb);
     col_hsv.y = pow(col_hsv.y, lerp(.75, 1, col_hsv.z * col_hsv.z));
-    col_hsv.x += lerp(hue_shift * !hue_shift_fresnel, hue_shift * _Time.x, hue_shift_anim);
+    col_hsv.x += lerp(hue_shift * !hue_shift_fresnel, hue_shift * Time.x, hue_shift_anim);
     col_hsv.x += lerp(0, hue_shift * i.fresnel, hue_shift_fresnel);
     col_hsv.x = frac(col_hsv.x);
     col_hsv.z *= _LightnessMul;
@@ -401,10 +405,10 @@ float3 oklab_adjust(ToonkuData i, float3 col, float3 hue) {
     
     #ifdef TOONKU_FIREWORKS
     float theta = atan2_01(i.vnormal.xy) * TWO_PI;
-    float angle_hue = theta * 2 + _Time.y;
+    float angle_hue = theta * 2 + Time.y;
     #endif
     
-    lch.z += lerp(hue_shift * !hue_shift_fresnel, hue_shift * _Time.x, hue_shift_anim);
+    lch.z += lerp(hue_shift * !hue_shift_fresnel, hue_shift * Time.x, hue_shift_anim);
     lch.z += lerp(0, hue_shift * i.fresnel, hue_shift_fresnel);
     
     #ifdef TOONKU_FIREWORKS
@@ -437,9 +441,9 @@ float tv_static(ToonkuData i) {
     // return frac(i.pos.x * 1000);
     // return line_n % 2;  
     // float t = 0;
-    float t = trunc(_Time.y * 60) / 60;
-    // float t = trunc(_Time.y * 60) / 60;
-    // return frac(_Time.y);
+    float t = trunc(Time.y * 60) / 60;
+    // float t = trunc(Time.y * 60) / 60;
+    // return frac(Time.y);
     float a = snoise3(float3(i.wpos.x + line_n, i.wpos.z + line_n, t) * 60);
     a = pow((a+1)*.5,2);
     // return pow((a+1)*.5,2);
@@ -450,6 +454,14 @@ float tv_static(ToonkuData i) {
 }
 
 half4 frag (v2fa input, half facing : VFACE) : SV_Target {
+    if(_UdonSyncTime > 0) {
+        Time.x = _UdonSyncTime / 20.0;
+        Time.y = _UdonSyncTime;
+        Time.z = _UdonSyncTime * 2;
+        Time.w = _UdonSyncTime * 3;
+    } else {
+        Time = _Time;
+    }
     ToonkuData i;
     i.pos = input.pos;
     i.uv = input.uv;
