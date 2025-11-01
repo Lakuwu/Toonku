@@ -13,6 +13,7 @@ Shader "Laku/Toonku" {
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
 			BlendOp [_BlendOpBase], [_BlendOpAlpha]
 			ZWrite [_ZWrite]
+			AlphaToMask [_AlphaToMask]
 			
             HLSLPROGRAM
 			#pragma target 5.0
@@ -34,6 +35,8 @@ Shader "Laku/Toonku" {
 			Blend [_BlendSrcAdd] [_BlendDstAdd], [_BlendSrcAlphaAdd] [_BlendDstAlphaAdd]
 			BlendOp [_BlendOpAdd], [_BlendOpAlphaAdd]
 			ZWrite [_ZWrite]
+			AlphaToMask [_AlphaToMask]
+			
 			HLSLPROGRAM
 			#pragma target 5.0
             #pragma vertex vert

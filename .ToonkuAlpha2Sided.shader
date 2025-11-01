@@ -13,6 +13,7 @@ Shader "Laku/ToonkuAlpha2Sided" {
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
 			BlendOp [_BlendOpBase], [_BlendOpAlpha]
 			ZWrite [_ZWrite]
+			AlphaToMask [_AlphaToMask]
             Cull Front
 			
             HLSLPROGRAM
@@ -35,6 +36,7 @@ Shader "Laku/ToonkuAlpha2Sided" {
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
 			BlendOp [_BlendOp], [_BlendOpAlpha]
 			ZWrite [_ZWrite]
+			AlphaToMask [_AlphaToMask]
             Cull Back
 			
             HLSLPROGRAM
@@ -57,6 +59,8 @@ Shader "Laku/ToonkuAlpha2Sided" {
 			Blend [_BlendSrcAdd] [_BlendDstAdd], [_BlendSrcAlphaAdd] [_BlendDstAlphaAdd]
 			BlendOp [_BlendOpAdd], [_BlendOpAlphaAdd]
 			ZWrite [_ZWrite]
+			AlphaToMask [_AlphaToMask]
+			
 			HLSLPROGRAM
 			#pragma target 5.0
             #pragma vertex vert

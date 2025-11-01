@@ -1,6 +1,7 @@
 		[Header(Rendering)]
         [Space]
         [ToggleUI] _ZWrite ("ZWrite", Float) = 1
+        [ToggleUI] _AlphaToMask ("AlphaToMask", Float) = 0
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 2
 		[Enum(UnityEngine.Rendering.BlendMode)] _BlendSrcBase("Base Blend Src", Float) = 1
 		[Enum(UnityEngine.Rendering.BlendMode)] _BlendDstBase("Base Blend Dst", Float) = 0
