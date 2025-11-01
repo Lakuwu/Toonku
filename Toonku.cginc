@@ -484,6 +484,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     i.fresnel = i.reflect;
     #endif
     i.color = lerp(half4(1,1,1,1), sample_maintex(i), _TexInfluence) * _Color;
+    clip(i.color.a - (1-_AlphaClip));
     i.vnormal = normalize(input.vnormal);
     float metalness = tex2D(_MetalnessTex, i.uv) * _Metalness;
     i.metalness = metalness;
