@@ -153,7 +153,7 @@ float3 snowflakes(float3 uv) {
     // const int num_flakes = 25;
     float t = _Time.x * _SnowSpeed;
     
-    [unroll(50)]
+    [unroll(50)] // need to unroll otherwise compiler complains about gradient instructions
     for(int i = 0; i < num_flakes; ++i) {
         val += snowflake(uv, i, t);
         // [branch] if(val>0) return 1;
