@@ -4,6 +4,7 @@
 		[NoScaleOffset] _MainTex("Texture", 2D) = "white" {}
 		[NoScaleOffset] _EmissionTex("Emission", 2D) = "black" {}
 		_EmissionMul("Emission Multiplier", Float) = 1
+		[ToggleUI] _EmissionMainTexMul("Multiply emission by main texture", Float) = 0
 		[Normal][NoScaleOffset] _NormalTex("Normal Map Texture", 2D) = "bump" {}
 		_Metalness("Metalness", range(0,1)) = 0
 		[NoScaleOffset] _MetalnessTex("Metalness Texture", 2D) = "white" {}

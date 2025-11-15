@@ -16,6 +16,7 @@
 sampler2D _MainTex;
 sampler2D _EmissionTex;
 float _EmissionMul;
+float _EmissionMainTexMul;
 sampler2D _NormalTex;
 float4 _MainTex_TexelSize;
 sampler2D _MetalnessTex;
@@ -426,11 +427,13 @@ float3 oklab_adjust(ToonkuData i, float3 col, float3 hue) {
 
 float3 color_adjust(ToonkuData i, float3 col, float3 hue) {
     float3 ret = col;
+    float mask = tex2D(_HSVMaskTex, i.uv).x;
     [branch] if(hue.x || _ChromaMul != 1.0f || _LightnessMul != 1.0f) {
-        [branch] if(_UseHSV * tex2D(_HSVMaskTex, i.uv).x)
+        [branch] if(_UseHSV * mask)
             ret = hsv_adjust(i, col, hue);
         else
             ret = oklab_adjust(i, col, hue);
+            ret = lerp(col, ret, mask);
     }
     return ret;
 }
@@ -746,7 +749,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 #ifdef ADDPASS
     col.rgb *= col.a;
 #endif
-    col.rgb += tex2D(_EmissionTex, i.uv) * _EmissionMul;
+    col.rgb += color_adjust(i, tex2D(_EmissionTex, i.uv) * _EmissionMul * lerp(1.0.xxx, i.color.rgb, _EmissionMainTexMul), input.hue);
     col.rgb *= _FinalBrightness;
 
     col.a = shading_alpha(i);
