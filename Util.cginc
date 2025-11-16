@@ -51,7 +51,7 @@ float4 env_spec(float3 normal, float4 wpos, float4 color, float metallic, float 
 float3 col_spec(float3 normal, float4 wpos, float3 color, float metallic) {
     //return 0;
     float3 view_dir_w = normalize(_WorldSpaceCameraPos - wpos);
-    float3 f0 = lerp(0, color, metallic);
+    float3 f0 = lerp(0.04, color, metallic);
     float3 f = fresnel_laku(normal, wpos, float4(f0,1)).rgb;
     float3 spec = f * color;
     // return max(0,spec); 
