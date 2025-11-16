@@ -75,7 +75,7 @@
 		
 		[Header(Lighting)]
 		[Space]
-		_MinLight("Minimum Light Value", Range(0,2)) = 0
+		_MinLight("Minimum Light Value", Range(0,2)) = 0.05
         _FinalBrightness("Final Brightness", Range(0,1)) = 1
 		[ToggleUI] _UseSH("Use Spherical Harmonics", Float) = 1
 		[ToggleUI] _UseRealtimeLights("Use Realtime Lights", Float) = 1
