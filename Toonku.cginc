@@ -692,8 +692,9 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     roughness = max(roughness, _RoughnessMin);
     float envmapmul = tex2D(_EnvMapMaskTex, i.uv) * _EnvMapMask;
     float3 lv_spec = 0;
+    float4 col_adjusted = float4(color_adjust(i,i.color.rgb,input.hue), i.color.a);
     if(have_light_volumes) {
-        lv_spec = LightVolumeSpecular(i.color, 1 - roughness, metalness, i.normal, i.view_dir, L0, L1r, L1g, L1b);
+        lv_spec = LightVolumeSpecular(col_adjusted, 1 - roughness, metalness, i.normal, i.view_dir, L0, L1r, L1g, L1b);
         lv_spec = col_spec(i.normal, i.wpos, lv_spec, metalness).rgb;
         // return float4(lv_spec, 1);
     }
@@ -704,10 +705,9 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     // return float4(max_component(fwidth(lv_spec.rgb)).xxx, 1); 
     // return float4(lv_spec*lerp(1, 0.2, dxspec), 1); 
     // lv_spec *= lerp(1, 0.5, dxspec); 
-    // lv_spec *= 0.9; 
-    
-    float3 spec_env = envmapmul * max(saturate(env_spec(i.normal, i.wpos, i.color, metalness, roughness)), lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol);
-    
+    // lv_spec *= 0.9;  
+    float3 spec_env = envmapmul * max(saturate(env_spec(i.normal, i.wpos, col_adjusted, metalness, roughness)), lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol);
+    // return float4(lv_spec, 1);
     #ifdef DO_IRIDESCENT
     float3 spec_env_irid = envmapmul * max(saturate(env_spec(i.normal, i.wpos, 1.0.xxxx, 1, roughness)), lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol) * iridescent(i);
     // spec *= iridescent(i);
