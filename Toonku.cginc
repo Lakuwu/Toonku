@@ -754,7 +754,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 
     col.a = shading_alpha(i);
 
-    float3 dithering = (ditherNoiseFuncHigh(screen_uv) - 0.5) * 2 * 0.002;
+    float3 dithering = (ditherNoiseFuncHigh(screen_uv) - 0.5) * 2 * 0.00025;
     col.rgb = max(col.rgb + dithering, float3(0,0,0));
     return col;
 }
