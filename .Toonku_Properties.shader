@@ -72,6 +72,8 @@
 		[ToggleUI] _Debug("Debug Toggle", Float) = 0
 		_GeomAngle("Geometry shader angle", range(-1,1)) = 0.0
 		[ToggleUI] _MultiplySpecularByVertexCol("Multiply specular by vertex color", Float) = 0
+		[ToggleUI] _MultiplyMainByVertexCol("Multiply main color by vertex color", Float) = 0
+		[ToggleUI] _FlipBacksideNormals("Flip backside normals", Float) = 1
 		
 		[Header(Lighting)]
 		[Space]

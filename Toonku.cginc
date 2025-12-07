@@ -58,7 +58,8 @@ float _AnimIdx;
 float _LightnessMul;
 float _UseHSV;
 float _ChromaMul;
-float _MultiplySpecularByVertexCol;
+float _MultiplySpecularByVertexCol, _MultiplyMainByVertexCol;
+float _FlipBacksideNormals;
 float _HueShift, _HueShift1, _HueShift2, _HueShift3, _HueShift4, _HueShift5, _HueShift6, _HueShift7;
 float _HueShiftAnim, _HueShiftAnim1, _HueShiftAnim2, _HueShiftAnim3, _HueShiftAnim4, _HueShiftAnim5, _HueShiftAnim6, _HueShiftAnim7;
 float _HueShiftFresnel, _HueShiftFresnel1, _HueShiftFresnel2, _HueShiftFresnel3, _HueShiftFresnel4, _HueShiftFresnel5, _HueShiftFresnel6, _HueShiftFresnel7;
@@ -478,7 +479,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     i.normal.x = dot(float3(input.tangent.x, input.bitangent.x, input.normal.x), tex_normal);
     i.normal.y = dot(float3(input.tangent.y, input.bitangent.y, input.normal.y), tex_normal);
     i.normal.z = dot(float3(input.tangent.z, input.bitangent.z, input.normal.z), tex_normal);
-    i.normal = i.normal * facing;
+    if(_FlipBacksideNormals) i.normal = i.normal * facing;
     i.normal = normalize(i.normal);
     i.view_dir = normalize(_WorldSpaceCameraPos - i.wpos.xyz);
     i.fresnel = dot(i.normal, i.view_dir);
@@ -487,6 +488,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     i.fresnel = i.reflect;
     #endif
     i.color = lerp(half4(1,1,1,1), sample_maintex(i), _TexInfluence) * _Color;
+    if(_MultiplyMainByVertexCol) i.color *= i.vertex_color;
     clip(i.color.a - (1-_AlphaClip));
     i.vnormal = normalize(input.vnormal);
     float metalness = tex2D(_MetalnessTex, i.uv) * _Metalness;
