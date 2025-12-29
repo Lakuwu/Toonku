@@ -596,9 +596,8 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         
     } else {
         ambient_dir = max(0,ShadeSH9(float4(i.normal, 1)));
-        // https://github.com/lilxyzw/lilToon/blob/31c6e3936d0571207935a4395c3374e25b82c009/Assets/lilToon/Shader/Includes/openlit_core.hlsl#L65C8-L65C8
-        // SH magic from OpenLit / LilToon:
         float3 sh9Dir = unity_SHAr.xyz * 0.333333 + unity_SHAg.xyz * 0.333333 + unity_SHAb.xyz * 0.333333;
+        sh9Dir.y = abs(sh9Dir.y); // Match liltoon behaviour; John Liltoon decreed that light from below shan't be
         float3 lightDirectionForSH9 = dot(sh9Dir,sh9Dir) < 0.000001 ? 0 : normalize(sh9Dir);
         // return dot(lightDirectionForSH9, i.normal);
         ShadeSH9ToonDouble(lightDirectionForSH9, sh_max, sh_min, sh_dc);
