@@ -1,5 +1,12 @@
 #include "UnityCG.cginc"
+#if 0 //set to 1 to disable lightvolumes
+float _UdonLightVolumeEnabled = 0, _UdonLightVolumeCount = 0;
+float LightVolumeSpecular(float3 albedo, float smoothness, float metallic, float3 worldNormal, float3 viewDir, float3 L0, float3 L1r, float3 L1g, float3 L1b) {return 0;}
+float LightVolumeSH(float3 worldPos, out float3 L0, out float3 L1r, out float3 L1g, out float3 L1b, float3 worldPosOffset = 0) {L0 = 0; L1r = 0; L1g = 0; L1b = 0; return 0;}
+float3 LightVolumeEvaluate(float3 worldNormal, float3 L0, float3 L1r, float3 L1g, float3 L1b) {return 0;}
+#else
 #include "lib/LightVolumes.cginc"
+#endif
 #include "AutoLight.cginc"
 #include "Util.cginc"
 #include "ToonkuInclude.cginc"
@@ -414,7 +421,9 @@ float3 oklab_adjust(ToonkuData i, float3 col, float3 hue) {
     lch.z += lerp(0, hue_shift * i.fresnel, hue_shift_fresnel);
     
     #ifdef TOONKU_FIREWORKS
-    lch.z += angle_hue;
+    if(_NYClothIdx != 2) {
+        lch.z += angle_hue;
+    }
     #endif
     
     lch.z = glsl_mod(lch.z, TWO_PI);
@@ -423,6 +432,14 @@ float3 oklab_adjust(ToonkuData i, float3 col, float3 hue) {
     
     lab = lch_to_lab(lch);
     col.rgb = oklab_to_linear_srgb(lab);
+    #ifdef TOONKU_FIREWORKS
+    if(_NYClothIdx == 2) {
+        lch.z = glsl_mod(lch.z + angle_hue, TWO_PI);
+        float3 col2 = lch_to_lsrgb(lch);
+        // col = lerp(col, col2, saturate(pow((1-i.fresnel), 1) * 10));
+        col = lerp(col, col2, saturate(pow((length(i.vnormal.xy)), 1) * 5));
+    }
+    #endif
     return col;
 }
 
@@ -664,7 +681,28 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     // col.rgb = lerp(col_rgb, col.rgb, 1);
     #ifdef TOONKU_FIREWORKS
     emit = max(emit, do_fireworks(input));
-    emit = max(emit, do_the_thing(i));
+    switch(_NYClothIdx) {
+        case -1: {
+            // gal robe
+            emit = max(emit, do_the_thing(i));
+            break;
+        }
+        case 1: {
+            // uwuki chic belts
+            emit = max(emit, uwuki_belts(i));
+            break;
+        }
+        case 2: {
+            // super rgb hair
+            break;
+        }
+        case 3: {
+            // uwuki chic clothes
+            emit = max(emit, uwuki_clothes(i));
+            break;
+        }
+    }
+    // emit = max(emit, do_the_thing(i));
     // return float4(do_the_thing(i), 1);
     // return float4(year(input.uv, 4, float2(0,0)),1); 
     #endif
@@ -726,6 +764,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 #ifdef ALPHA
     col.rgb = saturate(diff) + saturate(spec) + saturate(emit);
     col.a = saturate(i.color.a + luminance(spec));
+    // col.a = saturate(i.color.a + luminance(spec));
     // col.rgb = lerp(saturate(spec), saturate(diff) + saturate(spec), i.color.a);
     // col.a = saturate(i.color.a + max_component(spec));
     // col.a = lerp(i.color.a, 1, luminance(spec));
@@ -745,7 +784,8 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         // col.rgb = spec_ambient;
     }
     // col.rgb = max(diff,0) + max(spec,0);
-    col.a = i.color.a;
+    // col.a = i.color.a;
+    col.a = saturate(i.color.a + luminance(spec));
 #endif
     
 #ifdef ADDPASS

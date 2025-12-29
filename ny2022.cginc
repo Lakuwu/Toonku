@@ -1,11 +1,13 @@
 #include "UnityCG.cginc"
-
+int _NYClothIdx;
 float _DoSkirt, _DoEye;
 float4 _SkirtUV, _EyeUV;
 
 // the stinky who came up with this (me) should feel bad for what he did
 // bytes are in reverse order inside the uints, so rows numbered 1-4 would be 0x04030201
 // and the bits are mirrored left to right in the bytes : ) why did i do it like this 
+
+// Note: use nyfontify.exe :)
 
 static const uint font[36] = {
     0xc3e77e3c, 0xc3c3c3c3, 0x3c7ee7c3,  // [0] 0
@@ -19,7 +21,8 @@ static const uint font[36] = {
     0xc3c3c3c3, 0xffdbdbdb, 0x66667e7e,  // [8] W
     0xc3e37f3f, 0x3f7fe3c3, 0xc3c3e373,  // [9] R
     0x18181818, 0x18181818, 0x18180000,  // [10]!
-    0x0303ffff, 0xc0e07f3f, 0x3c7ee7c3,  // [11]5
+    0x03c77e3c, 0xc3e77f3b, 0x3c7ee7c3,  // [11]6 
+    // 0x0303ffff, 0xc0e07f3f, 0x3c7ee7c3,  // [11]5
     // 0x7c787060, 0xff63676e, 0x606060ff,  // [11]4
     // 0x3e1e0e06, 0xffc6e676, 0x060606ff,  // [11]4
 };
@@ -103,7 +106,7 @@ float3 yearbounce(float3 uva, float scale, float2 pos) {
     float3 val = smoothblit3(uvbounce(uv - float2(R16,R24),0), 1);
     val += smoothblit3(uvbounce(uv - float2(R16 * 21,R24),-.2), 0);
     val += smoothblit3(uvbounce(uv - float2(R16 * 42,R24),-.4), 1);
-    val += smoothblit3(uvbounce(uv - float2(R16 * 63,R24),-.6), 1);
+    val += smoothblit3(uvbounce(uv - float2(R16 * 63,R24),-.6), 11);
     val.y += floor(floor((uv.x) * 16) / 20);
     return val;
 }
@@ -455,6 +458,96 @@ float3 do_the_thing(ToonkuData i) {
     col += do_sleeve(i, 0.800732, 0.987643, 0.70839, 0.740803);
     col += do_sleeve(i, 0.010698, 0.19761, 0.704114, 0.736527);
     
+    return col;
+}
+
+float3 do_year_a(ToonkuData i, float umin, float umax, float vmin, float vmax) {
+    i.uv = frac(i.uv);
+    [branch] if(i.uv.x < umin || i.uv.x > umax || i.uv.y < vmin || i.uv.y > vmax) return 0;
+    float aspect =  (umax - umin) / (vmax - vmin);
+    float3 uv;
+    uv.x = 1-map(i.uv.x, umin, umax, 0, 1);
+    uv.y = 1-map(i.uv.y, vmin, vmax, 0, 1);
+    uv.z = aspect;
+    float3 col = 0;
+    col += vgrad0(yearspin3(uv, 1.5, float2(_Time.x*1+.25,.1)));
+    col += vgrad0(yearspin3(uv, 1.5, float2(_Time.x*1+.75,.1)));
+    col += rainbow0(wavetext(uv, 2, float2(_Time.x*1+.5, .8)));
+    col += plasmarim(wavetext(uv, 2, float2(_Time.x*1, .8)));
+    return col;
+    // return bounce0(yearbounce(uv, 10, float2(-_Time.x*2, 1)));
+    // return bounce0(yearbounce(uv, 10, float2(0, 1)));
+}
+
+float3 do_year_b(ToonkuData i, float umin, float umax, float vmin, float vmax) {
+    i.uv = frac(i.uv);
+    [branch] if(i.uv.x < umin || i.uv.x > umax || i.uv.y < vmin || i.uv.y > vmax) return 0;
+    float aspect =  (umax - umin) / (vmax - vmin);
+    float3 uv;
+    uv.x = 1-map(i.uv.x, umin, umax, 0, 1);
+    uv.y = 1-map(i.uv.y, vmin, vmax, 0, 1);
+    uv.z = aspect;
+    float3 col = 0;
+    col += vgrad0(yearspin3(uv, 1.3, float2(_Time.x*1.1+.25,.1)));
+    col += vgrad0(yearspin3(uv, 1.3, float2(_Time.x*1.1+.75,.1)));
+    col += rainbow0(wavetext(uv, 2, float2(_Time.x*1.1+.5, .8)));
+    col += plasmarim(wavetext(uv, 2, float2(_Time.x*1.1, .8)));
+    return col;
+    // return bounce0(yearbounce(uv, 10, float2(-_Time.x*2, 1)));
+    // return bounce0(yearbounce(uv, 10, float2(0, 1)));
+}
+
+float3 uwuki_belts(ToonkuData i) {
+    float3 col = 0;
+    i.uv.xy = i.uv.yx;
+    
+    // tummy belt
+    float a_left = 0.01497;
+    float a_right = 0.050722;
+    float a_bottom = 0.049567;
+    float a_top = 0.926148;
+    
+    float b_left = 0.071673;
+    float b_right = 0.104524;
+    float b_bottom = 0.049567;
+    float b_top = 0.810638;
+    
+    col += do_year_a(i, a_bottom, a_top + (b_top - b_bottom)* ((a_right - a_left) / (b_right - b_left)), a_left, a_right);
+    col += do_year_a(i, b_bottom - (a_top - a_bottom) * ((b_right - b_left) / (a_right - a_left)), b_top, b_left, b_right);
+    
+    // chest belt
+    a_left = 0.328288;
+    a_right = 0.353097;
+    a_bottom = 0.062553;
+    a_top = 0.939237;
+    
+    b_left = 0.370526;
+    b_right = 0.394831;
+    b_bottom = 0.062553;
+    b_top = 0.826014;
+    
+    col += do_year_b(i, a_bottom, a_top + (b_top - b_bottom)* ((a_right - a_left) / (b_right - b_left)), a_left, a_right);
+    col += do_year_b(i, b_bottom - (a_top - a_bottom) * ((b_right - b_left) / (a_right - a_left)), b_top, b_left, b_right);
+    return col;
+}
+
+float3 do_year_c(ToonkuData i, float umin, float umax, float vmin, float vmax) {
+    i.uv = frac(i.uv);
+    [branch] if(i.uv.x < umin || i.uv.x > umax || i.uv.y < vmin || i.uv.y > vmax) return 0;
+    float aspect =  (umax - umin) / (vmax - vmin);
+    float3 uv;
+    uv.x = map(i.uv.x, umin, umax, 0, 1);
+    uv.y = 1-map(i.uv.y, vmin, vmax, 0, 1);
+    uv.z = aspect/3;
+    uv.x = frac(uv.x * 3);
+    float3 col = 0;
+    col += bounce0(yearbounce(uv, 2.1, float2(-_Time.x*2, 1)));
+    return col;
+}
+
+float3 uwuki_clothes(ToonkuData i) {
+    float3 col = 0;
+    col += do_year_c(i, 0.054707, 0.945292, 0.020777, 0.069264);
     return col;
 }
 

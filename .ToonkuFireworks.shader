@@ -4,7 +4,7 @@ Shader "Laku/ToonkuFireworks" {
         
 		[Header(Fireworks)]
 		[Space]
-		// [NoScaleOffset] _RandomDirTex("Random Dir Texture", 2D) = "white" {}
+		_NYClothIdx("Cloth IDX", Integer) = 0
 		
 @@insert .Toonku_Rendering_Opaque.shader@@
     }

@@ -45,6 +45,7 @@ float3 unpack3(float3 f) {
 } 
 
 float do_firework(float3 camera_pos, float3 dir, float u, float r, float3 s_origin) {
+    s_origin.y += 0.1;
     float b = 0;
     float d = 1000000;
     float l0 = 1 - (u % 4) * 0.2;
