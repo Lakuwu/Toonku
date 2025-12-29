@@ -318,12 +318,12 @@ void ShadeSH9ToonDouble(float3 lightDirection, out float3 sh_max, out float3 sh_
     l1.g = dot(unity_SHAg.rgb, N);
     l1.b = dot(unity_SHAb.rgb, N);
     sh_max = res + l1;
-    // sh_min = res - l1;
-    N = normalize(unity_SHAr.rgb + unity_SHAg.rgb + unity_SHAb.rgb);
-    l1.r = dot(unity_SHAr.rgb, N);
-    l1.g = dot(unity_SHAg.rgb, N);
-    l1.b = dot(unity_SHAb.rgb, N);
-    sh_min = res + l1;
+    sh_min = res - l1;
+    // N = normalize(unity_SHAr.rgb + unity_SHAg.rgb + unity_SHAb.rgb);
+    // l1.r = dot(unity_SHAr.rgb, N);
+    // l1.g = dot(unity_SHAg.rgb, N);
+    // l1.b = dot(unity_SHAb.rgb, N);
+    // sh_min = res + l1;
 }
 
 void SH_Eval_01(float3 light_dir, float3 L0, float3 L1r, float3 L1g, float3 L1b, out float3 sh_max, out float3 sh_min, out float3 sh_dc) {
