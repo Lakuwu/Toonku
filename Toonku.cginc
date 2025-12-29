@@ -564,7 +564,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     float3 sh_min, sh_max, sh_dc;
     
     // return float4(_UseLightVolumes, _UdonLightVolumeEnabled, _UdonLightVolumeCount, 1);
-    [branch] if(_UseLightVolumes) {
+    [branch] if(have_light_volumes) {
         LightVolumeSH(i.wpos, L0, L1r, L1g, L1b);
         ambient_dir = LightVolumeEvaluate(i.normal, L0, L1r, L1g, L1b);
         // aciil said to do normalize the sh vectors first but idk if i want to 
