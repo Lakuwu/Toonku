@@ -3,6 +3,19 @@ int _NYClothIdx;
 float _DoSkirt, _DoEye;
 float4 _SkirtUV, _EyeUV;
 
+/*
+
+Dear me,
+
+drawing the text with the fancy effects generates an absolute fuckton of instructions.
+I made Unity crash when compiling the shader. It's time to retire this approach.
+For the new year of 2027 you shall start anew! New effects! New ideas!
+
+Love,
+Laku
+
+*/
+
 // the stinky who came up with this (me) should feel bad for what he did
 // bytes are in reverse order inside the uints, so rows numbered 1-4 would be 0x04030201
 // and the bits are mirrored left to right in the bytes : ) why did i do it like this 
@@ -333,7 +346,7 @@ float4 bounce0(float3 val) {
     float3 col1 = lerp(c1,c0,v2);
     return float4(val1 * col1 + val2 * col0, val1 + val2);
 }
-
+/*
 float4 skirt(float3 uv) {
     float4 col = 0;
     col += bounce0(yearbounce(uv, 10, float2(-_Time.x*2, 1)));
@@ -375,7 +388,7 @@ float4 do_eye(ToonkuData i) {
     uv.z = aspect;
     return eye(uv);
 }
-
+*/
 float3 yearspin2(float3 uva, float scale, float2 pos) {
     float2 uv = uva.xy;
     pos.x = frac(pos.x);
@@ -471,9 +484,9 @@ float3 do_year_a(ToonkuData i, float umin, float umax, float vmin, float vmax) {
     uv.z = aspect;
     float3 col = 0;
     col += vgrad0(yearspin3(uv, 1.5, float2(_Time.x*1+.25,.1)));
-    col += vgrad0(yearspin3(uv, 1.5, float2(_Time.x*1+.75,.1)));
+    // col += vgrad0(yearspin3(uv, 1.5, float2(_Time.x*1+.75,.1)));
     col += rainbow0(wavetext(uv, 2, float2(_Time.x*1+.5, .8)));
-    col += plasmarim(wavetext(uv, 2, float2(_Time.x*1, .8)));
+    // col += plasmarim(wavetext(uv, 2, float2(_Time.x*1, .8)));
     return col;
     // return bounce0(yearbounce(uv, 10, float2(-_Time.x*2, 1)));
     // return bounce0(yearbounce(uv, 10, float2(0, 1)));
@@ -488,13 +501,57 @@ float3 do_year_b(ToonkuData i, float umin, float umax, float vmin, float vmax) {
     uv.y = 1-map(i.uv.y, vmin, vmax, 0, 1);
     uv.z = aspect;
     float3 col = 0;
-    col += vgrad0(yearspin3(uv, 1.3, float2(_Time.x*1.1+.25,.1)));
+    // col += vgrad0(yearspin3(uv, 1.3, float2(_Time.x*1.1+.25,.1)));
     col += vgrad0(yearspin3(uv, 1.3, float2(_Time.x*1.1+.75,.1)));
-    col += rainbow0(wavetext(uv, 2, float2(_Time.x*1.1+.5, .8)));
+    // col += rainbow0(wavetext(uv, 2, float2(_Time.x*1.1+.5, .8)));
     col += plasmarim(wavetext(uv, 2, float2(_Time.x*1.1, .8)));
     return col;
     // return bounce0(yearbounce(uv, 10, float2(-_Time.x*2, 1)));
     // return bounce0(yearbounce(uv, 10, float2(0, 1)));
+}
+
+float3 do_chic_collar(ToonkuData i, float umin, float umax, float vmin, float vmax) {
+    i.uv = frac(i.uv);
+    [branch] if(i.uv.x < umin || i.uv.x > umax || i.uv.y < vmin || i.uv.y > vmax) return 0;
+    float aspect =  (umax - umin) / (vmax - vmin);
+    float3 uv;
+    uv.x = 1-map(i.uv.x, umin, umax, 0, 1);
+    uv.y = map(i.uv.y, vmin, vmax, 0, 1);
+    uv.z = aspect;
+    float3 col = 0;
+    col += vgrad0(yearspin3(uv, 1.3, float2(_Time.x*1.1+.25,.1)));
+    // col += vgrad0(yearspin3(uv, 1.3, float2(_Time.x*1.1+.75,.1)));
+    col += rainbow0(wavetext(uv, 2, float2(_Time.x*1.1+.5, .8)));
+    // col += plasmarim(wavetext(uv, 2, float2(_Time.x*1.1, .8)));
+    return col;
+}
+
+float3 do_chic_sleeve_belt0(ToonkuData i, float umin, float umax, float vmin, float vmax) {
+    i.uv = frac(i.uv);
+    [branch] if(i.uv.x < umin || i.uv.x > umax || i.uv.y < vmin || i.uv.y > vmax) return 0;
+    float aspect =  (umax - umin) / (vmax - vmin);
+    float3 uv;
+    uv.x = map(i.uv.x, umin, umax, 0, 1);
+    uv.y = map(i.uv.y, vmin, vmax, 0, 1);
+    uv.z = aspect;
+    float3 col = 0;
+    col += bounce0(yearbounce(uv, 2.1, float2(-_Time.x*1.1, 1)));
+    col += bounce0(yearbounce(uv, 2.1, float2(-_Time.x*1.1+.5, 1)));
+    return col;
+}
+
+float3 do_chic_sleeve_belt1(ToonkuData i, float umin, float umax, float vmin, float vmax) {
+    i.uv = frac(i.uv);
+    [branch] if(i.uv.x < umin || i.uv.x > umax || i.uv.y < vmin || i.uv.y > vmax) return 0;
+    float aspect =  (umax - umin) / (vmax - vmin);
+    float3 uv;
+    uv.x = 1-map(i.uv.x, umin, umax, 0, 1);
+    uv.y = map(i.uv.y, vmin, vmax, 0, 1);
+    uv.z = aspect;
+    float3 col = 0;
+    col += bounce0(yearbounce(uv, 2.1, float2(-_Time.x*1.1, 1)));
+    col += bounce0(yearbounce(uv, 2.1, float2(-_Time.x*1.1+.5, 1)));
+    return col;
 }
 
 float3 uwuki_belts(ToonkuData i) {
@@ -528,6 +585,47 @@ float3 uwuki_belts(ToonkuData i) {
     
     col += do_year_b(i, a_bottom, a_top + (b_top - b_bottom)* ((a_right - a_left) / (b_right - b_left)), a_left, a_right);
     col += do_year_b(i, b_bottom - (a_top - a_bottom) * ((b_right - b_left) / (a_right - a_left)), b_top, b_left, b_right);
+    
+    // choker
+    a_left = 0.230372;
+    a_right = 0.26497;
+    a_bottom = 0.049852;
+    a_top = 0.935711*2;
+    
+    col += do_chic_collar(i, a_bottom, a_top, a_left, a_right);
+    
+    // left sleeve top belt
+    a_left = 0.774433;
+    a_right = 0.818856;
+    a_bottom = 0.041147;
+    a_top = 0.949786;
+    
+    col += do_chic_sleeve_belt0(i, a_bottom, a_top, a_left, a_right);
+    
+    // left sleeve bottom belt
+    a_left = 0.654966;
+    a_right = 0.699092;
+    a_bottom = 0.041147;
+    a_top = 0.949786;
+    
+    // col += do_chic_sleeve_belt0(i, a_bottom, a_top, a_left, a_right);
+    
+    // right sleeve top belt
+    a_left = 0.531243;
+    a_right = 0.574577;
+    a_bottom = 0.059735;
+    a_top = 0.950075;
+    
+    col += do_chic_sleeve_belt1(i, a_bottom, a_top, a_left, a_right);
+    
+    // right sleeve bottom belt
+    a_left = 0.414441;
+    a_right = 0.457;
+    a_bottom = 0.059735;
+    a_top = 0.950075;
+    
+    // col += do_chic_sleeve_belt1(i, a_bottom, a_top, a_left, a_right);
+    
     return col;
 }
 
@@ -550,7 +648,7 @@ float3 uwuki_clothes(ToonkuData i) {
     col += do_year_c(i, 0.054707, 0.945292, 0.020777, 0.069264);
     return col;
 }
-
+/*
 float4 extra_func(ToonkuData i) {
     if(i.facing < 0) return 0;
     float4 col = 0;
@@ -558,3 +656,4 @@ float4 extra_func(ToonkuData i) {
     [branch] if(_DoEye) col += do_eye(i);
     return col;
 }
+*/
