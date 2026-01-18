@@ -6,6 +6,8 @@ Shader "Laku/ToonkuFireworks" {
 		[Space]
 		_NYClothIdx("Cloth IDX", Integer) = 0
 		
+@@insert .Toonku_Stencil.shader@@
+		
 @@insert .Toonku_Rendering_Opaque.shader@@
     }
     SubShader {
@@ -16,6 +18,15 @@ Shader "Laku/ToonkuFireworks" {
 			Tags { "LightMode" = "ForwardBase" }
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
 			BlendOp [_BlendOpBase], [_BlendOpAlpha]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
             HLSLPROGRAM
 			#pragma target 5.0
             #pragma vertex vert
@@ -35,6 +46,15 @@ Shader "Laku/ToonkuFireworks" {
 			Tags { "LightMode"="ForwardAdd" }
 			Blend [_BlendSrcAdd] [_BlendDstAdd], [_BlendSrcAlphaAdd] [_BlendDstAlphaAdd]
 			BlendOp [_BlendOpAdd], [_BlendOpAlphaAdd]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
 			HLSLPROGRAM
 			#pragma target 5.0
             #pragma vertex vert

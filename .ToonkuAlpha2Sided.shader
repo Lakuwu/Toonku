@@ -2,6 +2,8 @@ Shader "Laku/ToonkuAlpha2Sided" {
     Properties {
 @@insert .Toonku_Properties.shader@@
         
+@@insert .Toonku_Stencil.shader@@
+		
 @@insert .Toonku_Rendering_Transparent.shader@@
     }
     SubShader {
@@ -12,6 +14,15 @@ Shader "Laku/ToonkuAlpha2Sided" {
 			Tags { "LightMode" = "ForwardBase" }
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
 			BlendOp [_BlendOpBase], [_BlendOpAlpha]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
 			ZWrite [_ZWrite]
 			AlphaToMask [_AlphaToMask]
             Cull Front
@@ -35,6 +46,15 @@ Shader "Laku/ToonkuAlpha2Sided" {
 			Tags { "LightMode" = "ForwardBase" }
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
 			BlendOp [_BlendOp], [_BlendOpAlpha]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
 			ZWrite [_ZWrite]
 			AlphaToMask [_AlphaToMask]
             Cull Back
@@ -58,6 +78,15 @@ Shader "Laku/ToonkuAlpha2Sided" {
 			Tags { "LightMode"="ForwardAdd" }
 			Blend [_BlendSrcAdd] [_BlendDstAdd], [_BlendSrcAlphaAdd] [_BlendDstAlphaAdd]
 			BlendOp [_BlendOpAdd], [_BlendOpAlphaAdd]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
 			ZWrite [_ZWrite]
 			AlphaToMask [_AlphaToMask]
 			

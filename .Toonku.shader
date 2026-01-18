@@ -2,6 +2,8 @@ Shader "Laku/Toonku" {
     Properties {
 @@insert .Toonku_Properties.shader@@
         
+@@insert .Toonku_Stencil.shader@@
+		
 @@insert .Toonku_Rendering_Opaque.shader@@
     }
     SubShader {
@@ -12,6 +14,15 @@ Shader "Laku/Toonku" {
 			Tags { "LightMode" = "ForwardBase" }
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
 			BlendOp [_BlendOpBase], [_BlendOpAlpha]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
 			ZWrite [_ZWrite]
 			AlphaToMask [_AlphaToMask]
 			
@@ -34,6 +45,15 @@ Shader "Laku/Toonku" {
 			Tags { "LightMode"="ForwardAdd" }
 			Blend [_BlendSrcAdd] [_BlendDstAdd], [_BlendSrcAlphaAdd] [_BlendDstAlphaAdd]
 			BlendOp [_BlendOpAdd], [_BlendOpAlphaAdd]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
 			ZWrite [_ZWrite]
 			AlphaToMask [_AlphaToMask]
 			

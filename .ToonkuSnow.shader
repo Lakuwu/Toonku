@@ -19,6 +19,8 @@ Shader "Laku/ToonkuSnow" {
 		_CandyXMul("Candy XMul", float) = 0
 		_CandyYMul("Candy YMul", float) = 0
         
+@@insert .Toonku_Stencil.shader@@
+		
 @@insert .Toonku_Rendering_Opaque.shader@@
     }
     SubShader {
@@ -28,6 +30,15 @@ Shader "Laku/ToonkuSnow" {
         Pass {
 			Tags { "LightMode" = "ForwardBase" }
 			Blend [_BlendSrcBase] [_BlendDstBase]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
             CGPROGRAM
 			#pragma target 5.0
             #pragma vertex vert
@@ -46,6 +57,15 @@ Shader "Laku/ToonkuSnow" {
 			Tags { "LightMode"="ForwardAdd" }
 			Blend [_BlendSrcAdd] [_BlendDstAdd]
 			BlendOp [_BlendOpAdd]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
 			CGPROGRAM
 			#pragma target 5.0
             #pragma vertex vert

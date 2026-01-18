@@ -14,6 +14,8 @@ Shader "Laku/ToonkuSnow2" {
 		_SnowSpeed("Snow Speed", Range(-10,10)) = 1
 		_SnowXMul("Snow X Mul", Range(1, 8)) = 1
         
+@@insert .Toonku_Stencil.shader@@
+		
 @@insert .Toonku_Rendering_Opaque.shader@@
     }
     SubShader {
@@ -24,6 +26,15 @@ Shader "Laku/ToonkuSnow2" {
 			Tags { "LightMode" = "ForwardBase" }
 			Blend [_BlendSrcBase] [_BlendDstBase], [_BlendSrcAlphaBase] [_BlendDstAlphaBase]
 			BlendOp [_BlendOpBase], [_BlendOpAlpha]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
 			ZWrite [_ZWrite]
             
             HLSLPROGRAM
@@ -42,6 +53,15 @@ Shader "Laku/ToonkuSnow2" {
 			Tags { "LightMode"="ForwardAdd" }
 			Blend [_BlendSrcAdd] [_BlendDstAdd], [_BlendSrcAlphaAdd] [_BlendDstAlphaAdd]
 			BlendOp [_BlendOpAdd], [_BlendOpAlphaAdd]
+			Stencil {
+				Ref [_StencilRef]
+				ReadMask [_StencilReadMask]
+				WriteMask [_StencilWriteMask]
+				Comp [_StencilComp]
+				Pass [_StencilPass]
+				Fail [_StencilFail]
+				ZFail [_StencilZFail]
+			}
 			ZWrite [_ZWrite]
             
 			HLSLPROGRAM
