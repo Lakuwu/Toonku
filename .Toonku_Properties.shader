@@ -14,7 +14,7 @@
 		[NoScaleOffset] _RoughnessTex("Roughness Texture", 2D) = "white" {}
 		_EnvMapMask("Environment Mapping", range(0,1)) = 0
 		[NoScaleOffset] _EnvMapMaskTex("Environment Mapping Mask", 2D) = "white" {}
-		_AlphaClip("Alpha clip", range(0,1)) = 0.5
+		_AlphaClip("Alpha clip", range(0,1)) = 1
 		_TexInfluence("Texture influence", range(0,1)) = 1
 		
 		[Header(Toon shading values)]
