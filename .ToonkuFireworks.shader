@@ -4,7 +4,7 @@ Shader "Laku/ToonkuFireworks" {
         
 		[Header(Fireworks)]
 		[Space]
-		_NYClothIdx("Cloth IDX", Integer) = 0
+		_NYClothIdx("    Cloth IDX", Integer) = 0
 		
 @@insert .Toonku_Stencil.shader@@
 		

@@ -4,15 +4,15 @@ Shader "Laku/ToonkuSnow2" {
 		
 		[Header(Snow)]
 		[Space]
-        _SnowTex ("Snow SDF Texture Array", 2DArray) = "white" {}
-        _SDFThreshold("SDF Threshold", range(-.1,.1)) = 0
-		[NoScaleOffset] _SnowMaskTex("Snow Mask", 2D) = "white" {}
-		_SnowUV("Snow UV", Vector) = (0, 0, 1, 1)
-		_SnowAlpha("Snow Alpha", Range(0,1)) = 1
-		_SnowScale("Snow Scale", Range(0,10)) = 1
-		[IntRange] _SnowAmount("Snow Amount", Range(0,200)) = 1
-		_SnowSpeed("Snow Speed", Range(-10,10)) = 1
-		_SnowXMul("Snow X Mul", Range(1, 8)) = 1
+        _SnowTex ("    Snow SDF Texture Array", 2DArray) = "white" {}
+        _SDFThreshold("    SDF Threshold", range(-.1,.1)) = 0
+		[NoScaleOffset] _SnowMaskTex("    Snow Mask", 2D) = "white" {}
+		_SnowUV("    Snow UV", Vector) = (0, 0, 1, 1)
+		_SnowAlpha("    Snow Alpha", Range(0,1)) = 1
+		_SnowScale("    Snow Scale", Range(0,10)) = 1
+		[IntRange] _SnowAmount("    Snow Amount", Range(0,200)) = 1
+		_SnowSpeed("    Snow Speed", Range(-10,10)) = 1
+		_SnowXMul("    Snow X Mul", Range(1, 8)) = 1
         
 @@insert .Toonku_Stencil.shader@@
 		

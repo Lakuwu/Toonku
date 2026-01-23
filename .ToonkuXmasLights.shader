@@ -3,8 +3,8 @@ Shader "Laku/ToonkuXmasLights" {
 @@insert .Toonku_Properties.shader@@
         [Header(Lights)]
 		[Space]
-		[ToggleUI] _WarmWhite("WarmWhite", Float) = 0
-		[ToggleUI] _GamerRGB("GamerRGB", Float) = 0
+		[ToggleUI] _WarmWhite("    WarmWhite", Float) = 0
+		[ToggleUI] _GamerRGB("    GamerRGB", Float) = 0
 		
 @@insert .Toonku_Stencil.shader@@
 		
