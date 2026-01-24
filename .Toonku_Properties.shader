@@ -30,24 +30,24 @@
 		
 		[Header(Shadow)]
 		[Space]
-		_DiffShadeColor("    Shadow Color", Color) = (1,1,1,1)
+		_DiffShadeColor("    Shadow Color", Color) = (0.67,0.67,0.67,1)
 		_DiffShadeColTint("    Shadow Color Tint", range(0,1)) = 0.0
-		_DiffShadeStart("    Shadow Start", range(-1,1)) = 0.0
+		_DiffShadeStart("    Shadow Start", range(-1,1)) = -0.25
 		_DiffShadeEnd("    Shadow End", range(-1,1)) = 0.5
 		
 		[Header(Fresnel Shade)]
 		[Space]
-		_FresnelShadeColor("    Fresnel Shade Color", Color) = (1,1,1,1)
-		_FresnelShadeStart("    Fresnel Shade Start", range(-1,1)) = 0.3
-		_FresnelShadeEnd("    Fresnel Shade End", range(-1,1)) = 0.5
+		_FresnelShadeColor("    Fresnel Shade Color", Color) = (0.816,0.816,0.816,1)
+		_FresnelShadeStart("    Fresnel Shade Start", range(-1,1)) = 0.0
+		_FresnelShadeEnd("    Fresnel Shade End", range(-1,1)) = 0.7
 		
 		[Header(Fresnel Light)]
 		[Space]
-		_FresnelLightAmount("    Fresnel Light Amount", range(0,3)) = 0.1
+		_FresnelLightAmount("    Fresnel Light Amount", range(0,3)) = 0.25
         [NoScaleOffset] _FresnelLightMaskTex("    Fresnel Light Mask", 2D) = "white" {}
 		_FresnelLightColor("    Fresnel Light Color", Color) = (1,1,1,1)
 		_FresnelLightTint("    Fresnel Light Tint", range(0,1)) = 0
-		_FresnelLightStart("    Fresnel Light Start", range(-1,1)) = 0.3
+		_FresnelLightStart("    Fresnel Light Start", range(-1,1)) = 0.0
 		_FresnelLightEnd("    Fresnel Light End", range(-1,1)) = 0.5
 		
 		[Space]
