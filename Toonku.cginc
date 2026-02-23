@@ -673,9 +673,12 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         spec_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
     }
     
-    diff = max(diff_ambient, diff_wl);
-    spec = max(spec_ambient, spec_wl);
-    col.rgb = max(col_ambient, col_wl);
+    float3 lightmax = max(saturate(_LightColor0 * attenuation), _MinLight.xxx) + max(saturate(ambient_col), _MinLight.xxx);
+    float inv_lightmax = saturate(1 / luminance(lightmax));
+    
+    diff = inv_lightmax * (diff_ambient + diff_wl);
+    spec = inv_lightmax * (spec_ambient + spec_wl);
+    col.rgb = inv_lightmax * (col_ambient + col_wl);
     // float3 col_lab = linear_srgb_to_oklab(col);
     // float3 lighting_lab = linear_srgb_to_oklab(lighting_rgb);
     // col_lab.x *= lighting_lab.x;
