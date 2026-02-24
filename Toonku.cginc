@@ -15,9 +15,7 @@ float3 LightVolumeEvaluate(float3 worldNormal, float3 L0, float3 L1r, float3 L1g
 #pragma shader_feature_local _FRESNEL_REFLECT_ON
 
 #if _IRIDESCENT_ON
-#ifdef BASEPASS
 #define DO_IRIDESCENT
-#endif
 #endif
 
 sampler2D _MainTex;
@@ -566,6 +564,8 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     float3 diff = 0, spec = 0, emit = 0;
     float have_light_volumes = (_UseLightVolumes && _UdonLightVolumeEnabled && _UdonLightVolumeCount) != 0;
     float3 L0 = 0, L1r = 0, L1g = 0, L1b = 0; 
+    float3 lightmax = 0;
+    float diffuse_total = diffuse_wl;
 #ifdef BASEPASS
     float3 ambient_dir = 0;
     float3 ambient_col = 0;
@@ -639,7 +639,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     if(diffuse_ambient != diffuse_ambient) {
         diffuse_ambient = 0;
     }
-    
+    diffuse_total += diffuse_ambient;
     // float diff = diffuse_ambient + diffuse_wl;
     // col.rgb = shading(i, diff);
     // col.rgb = color_adjust(i, saturate(col.rgb), input.hue);
@@ -677,7 +677,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         spec_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
     }
     
-    float3 lightmax = max(saturate(_LightColor0 * attenuation), _MinLight.xxx) + max(saturate(ambient_col), _MinLight.xxx);
+    lightmax = max(saturate(_LightColor0 * attenuation), _MinLight.xxx) + max(saturate(ambient_col), _MinLight.xxx);
     float inv_lightmax = saturate(1 / luminance(lightmax));
     
     diff = inv_lightmax * (diff_ambient + diff_wl);
@@ -733,6 +733,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         spec_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
         
     }
+    lightmax = max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
     col.rgb = col_wl;
     diff = diff_wl;
     spec = spec_wl;
@@ -760,7 +761,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     float3 spec_env = envmapmul * max(saturate(env_spec(i.normal, i.wpos, col_adjusted, metalness, roughness)), lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol);
     // return float4(lv_spec, 1);
     #ifdef DO_IRIDESCENT
-    float3 spec_env_irid = envmapmul * max(saturate(env_spec(i.normal, i.wpos, 1.0.xxxx, 1, roughness)), lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol) * iridescent(i);
+    float3 spec_env_irid = envmapmul * max(saturate(env_spec(i.normal, i.wpos, 1.0.xxxx, 1, roughness)), lv_spec) * lerp(1.0.xxxx, i.vertex_color, _MultiplySpecularByVertexCol) * iridescent(i) * saturate(lightmax);
     // spec *= iridescent(i);
     // spec *= iridescent(i);
     spec_env = lerp(spec_env, spec_env_irid, tex2D(_IridescentTex, i.uv).x);
@@ -787,7 +788,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     } else {
         col.rgb = saturate(diff) + saturate(spec) + saturate(emit);
         #ifdef DO_IRIDESCENT
-        float irid_diff_mul = lerp(0.5, 1, pow(saturate(diffuse_ambient + diffuse_wl), 0.5));
+        float irid_diff_mul = lerp(0.5, 1, pow(saturate(diffuse_total), 0.5));
         float3 irid_rgb = (diff*.8) + (spec * irid_diff_mul) + saturate(emit);
         col.rgb = lerp(col.rgb, irid_rgb, tex2D(_IridescentTex, i.uv).x);
         // col.rgb = diff;
