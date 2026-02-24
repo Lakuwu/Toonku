@@ -2,8 +2,14 @@
 		[Space]
 		_Color("    Color", Color) = (1, 1, 1, 1)
 		[NoScaleOffset] _MainTex("    Main Texture", 2D) = "white" {}
-		_AlphaClip("    Alpha Clip", range(0,1)) = 1
 		_TexInfluence("    Texture Influence", range(0,1)) = 1
+		
+		[Header(Alpha Transparency)]
+		[Space]
+		[NoScaleOffset] _AlphaTex("    Alpha Mask", 2D) = "white" {}
+		_AlphaStart("    Alpha Start", range(0,1)) = 0
+		_AlphaEnd("    Alpha End", range(0,1)) = 1
+		_AlphaClip("    Alpha Clip", range(0,1)) = 1
 		
 		[Header(Emission)]
 		[Space]
@@ -20,7 +26,7 @@
 		[Space]
 		_EnvMapMask("    Environment Mapping Strength", range(0,1)) = 0
 		[NoScaleOffset] _EnvMapMaskTex("    Environment Mapping Mask", 2D) = "white" {}
-		_Metalness("    Metalness Map Texture", range(0,1)) = 0
+		_Metalness("    Metalness", range(0,1)) = 0
 		[NoScaleOffset] _MetalnessTex("    Metalness Texture", 2D) = "white" {}
 		[ToggleUI] _MetalnessDiffuseMask ("    Metalness as Diffuse Mask", Float) = 0
 		[Space]

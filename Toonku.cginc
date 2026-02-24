@@ -21,6 +21,9 @@ float3 LightVolumeEvaluate(float3 worldNormal, float3 L0, float3 L1r, float3 L1g
 #endif
 
 sampler2D _MainTex;
+sampler2D _AlphaTex;
+float _AlphaStart;
+float _AlphaEnd;
 sampler2D _EmissionTex;
 float _EmissionMul;
 float _EmissionMainTexMul;
@@ -509,6 +512,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     i.fresnel = i.reflect;
     #endif
     i.color = lerp(half4(1,1,1,1), sample_maintex(i), _TexInfluence) * _Color;
+    i.color.a *= lerp(_AlphaStart, _AlphaEnd, tex2D(_AlphaTex, i.uv).r);
     if(_MultiplyMainByVertexCol) i.color *= i.vertex_color;
     clip(i.color.a - (1-_AlphaClip));
     i.vnormal = normalize(input.vnormal);
