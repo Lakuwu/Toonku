@@ -2,6 +2,8 @@
 		[Space]
 		_Color("    Color", Color) = (1, 1, 1, 1)
 		[NoScaleOffset] _MainTex("    Main Texture", 2D) = "white" {}
+		[NoScaleOffset] _SecondTex("    Second Texture", 2D) = "white" {}
+		_SecondTexStrength("    Second Texture Strength", range(0,1)) = 1
 		_TexInfluence("    Texture Influence", range(0,1)) = 1
 		
 		[Header(Alpha Transparency)]

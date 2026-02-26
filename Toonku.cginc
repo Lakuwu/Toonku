@@ -19,6 +19,8 @@ float3 LightVolumeEvaluate(float3 worldNormal, float3 L0, float3 L1r, float3 L1g
 #endif
 
 sampler2D _MainTex;
+sampler2D _SecondTex;
+float _SecondTexStrength;
 sampler2D _AlphaTex;
 float _AlphaStart;
 float _AlphaEnd;
@@ -325,9 +327,11 @@ float robepattern(ToonkuData i) {
 }
 
 float4 sample_maintex(ToonkuData i) {
+    float4 main_col = tex2D(_MainTex, i.uv);
+    float4 second = tex2D(_SecondTex, i.uv);
+    main_col *= lerp(1.0.xxxx, second, _SecondTexStrength);
     #ifdef TOONKU_EXTRA
         float4 extra_col = extra_func(i);
-        float4 main_col = tex2D(_MainTex, i.uv);
         // float4 main_col = textureNice(_MainTex, _MainTex_TexelSize, i.uv);
         // return 1;
         if(extra_col.a < 0) {
@@ -337,9 +341,9 @@ float4 sample_maintex(ToonkuData i) {
     #else
     
     #ifdef TOONKU_OVERRIDE_MAINTEX
-        return override_maintex(i, tex2D(_MainTex, i.uv));
+        return override_maintex(i, main_col);
     #else
-        return tex2D(_MainTex, i.uv);
+        return main_col;
     #endif
     
     #endif
