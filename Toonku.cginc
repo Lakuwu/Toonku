@@ -20,7 +20,7 @@ float3 LightVolumeEvaluate(float3 worldNormal, float3 L0, float3 L1r, float3 L1g
 
 sampler2D _MainTex;
 sampler2D _SecondTex;
-float _SecondTexStrength;
+float _SecondTexStrength, _SecondTexMode;
 sampler2D _AlphaTex;
 float _AlphaStart;
 float _AlphaEnd;
@@ -328,8 +328,14 @@ float robepattern(ToonkuData i) {
 
 float4 sample_maintex(ToonkuData i) {
     float4 main_col = tex2D(_MainTex, i.uv);
+    main_col = lerp(half4(1,1,1,1), main_col, _TexInfluence) * _Color;
     float4 second = tex2D(_SecondTex, i.uv);
-    main_col *= lerp(1.0.xxxx, second, _SecondTexStrength);
+    if(_SecondTexMode == 0) {
+        main_col *= lerp(1.0.xxxx, second, _SecondTexStrength);
+    } else if (_SecondTexMode == 1) {
+        main_col.rgb += second * _SecondTexStrength;
+        // main_col.a = saturate(main_col.a);
+    }
     #ifdef TOONKU_EXTRA
         float4 extra_col = extra_func(i);
         // float4 main_col = textureNice(_MainTex, _MainTex_TexelSize, i.uv);
@@ -513,7 +519,8 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     #if _FRESNEL_REFLECT_ON
     i.fresnel = i.reflect;
     #endif
-    i.color = lerp(half4(1,1,1,1), sample_maintex(i), _TexInfluence) * _Color;
+    // i.color = lerp(half4(1,1,1,1), sample_maintex(i), _TexInfluence) * _Color;
+    i.color = sample_maintex(i);
     i.color.a *= lerp(_AlphaStart, _AlphaEnd, tex2D(_AlphaTex, i.uv).r);
     if(_MultiplyMainByVertexCol) i.color *= i.vertex_color;
     clip(i.color.a - (1-_AlphaClip));
@@ -793,7 +800,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         col.rgb = saturate(diff) + saturate(spec) + saturate(emit);
         #ifdef DO_IRIDESCENT
         float irid_diff_mul = lerp(0.5, 1, pow(saturate(diffuse_total), 0.5));
-        float3 irid_rgb = (diff*.8) + (spec * irid_diff_mul) + saturate(emit);
+        float3 irid_rgb = (diff*1) + (spec * irid_diff_mul) + saturate(emit);
         col.rgb = lerp(col.rgb, irid_rgb, tex2D(_IridescentTex, i.uv).x);
         // col.rgb = diff;
         #endif
