@@ -543,6 +543,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     
     float4 wl = _WorldSpaceLightPos0;
     float attenuation = 1;
+    float have_realtime_light = 1;
     if(wl.w == 1) {
         // Point/Spot light
         float4 dirtolight = wl - i.wpos;
@@ -551,14 +552,19 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         wl = float4(normalize(dirtolight.xyz),0);
     } else {
         // Directional light
-        wl = float4(normalize(wl.xyz), 0);
+        if(length(wl.xyz) == 0) {
+            have_realtime_light = 0;
+        } else {
+            wl = float4(normalize(wl.xyz), 0);
+        }
     }
     
-    float lightcolor0_lum = saturate(luminance(_LightColor0));
-    float wl_ndotl = dot(i.normal, (float3)wl);
-    float diffuse_wl = half_lambert(wl_ndotl) * lightcolor0_lum;
-    // float diffuse_wl = (wl_ndotl) * lightcolor0_lum;
-    
+    float diffuse_wl = 0;
+    if(have_realtime_light) {
+        float lightcolor0_lum = saturate(luminance(_LightColor0));
+        float wl_ndotl = dot(i.normal, (float3)wl);
+        float diffuse_wl = half_lambert(wl_ndotl) * lightcolor0_lum;        
+    }
     
     float fresnel_light_mask = tex2D(_FresnelLightMaskTex, i.uv);
 #ifdef TOONKU_ROBEPATTERN
