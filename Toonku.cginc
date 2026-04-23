@@ -563,7 +563,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     if(have_realtime_light) {
         float lightcolor0_lum = saturate(luminance(_LightColor0));
         float wl_ndotl = dot(i.normal, (float3)wl);
-        float diffuse_wl = half_lambert(wl_ndotl) * lightcolor0_lum;        
+        diffuse_wl = half_lambert(wl_ndotl) * lightcolor0_lum;
     }
     
     float fresnel_light_mask = tex2D(_FresnelLightMaskTex, i.uv);
@@ -682,7 +682,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     spec_ambient = lerp(0, spec_ambient, _UseSH);
     
     float3 diff_wl = 0, spec_wl = 0, col_wl = 0;
-    [branch] if(_UseRealtimeLights) {
+    [branch] if(_UseRealtimeLights && have_realtime_light) {
         col_wl = shading_diff_spec(i, diffuse_wl, fresnel_light_mask, diff_wl, spec_wl);
         col_wl = color_adjust(i, saturate(col_wl), input.hue);
         col_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
@@ -748,8 +748,8 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 
         spec_wl = color_adjust(i, saturate(spec_wl), input.hue);
         spec_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
-        
     }
+    
     lightmax = max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
     col.rgb = col_wl;
     diff = diff_wl;
