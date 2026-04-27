@@ -18,9 +18,14 @@ float3 LightVolumeEvaluate(float3 worldNormal, float3 L0, float3 L1r, float3 L1g
 #define DO_IRIDESCENT
 #endif
 
+SamplerState linear_clamp_sampler;
+
 sampler2D _MainTex;
+Texture2D _ColorMask;
 sampler2D _SecondTex;
+float4 _SecondTex_ST;
 float _SecondTexStrength, _SecondTexMode;
+float _SecondTexAngle;
 sampler2D _AlphaTex;
 float _AlphaStart;
 float _AlphaEnd;
@@ -33,11 +38,12 @@ float _NormalMapMul;
 sampler2D _NormalTex2;
 float4 _NormalTex2_ST;
 float _NormalMapMul2;
+Texture2D _NormalMask2;
 float4 _MainTex_TexelSize;
-sampler2D _MetalnessTex;
-sampler2D _RoughnessTex;
-sampler2D _EnvMapMaskTex;
-sampler2D _HSVMaskTex;
+Texture2D _MetalnessTex;
+Texture2D _RoughnessTex;
+Texture2D _EnvMapMaskTex;
+Texture2D _HSVMaskTex;
 sampler2D _GrabTexture;
 float _Metalness;
 float _MetalnessDiffuseMask;
@@ -329,10 +335,23 @@ float robepattern(ToonkuData i) {
     // return float4(col * .025 + .01, 1);
 }
 
+float2 rotate2(float2 uv, float angle) {
+    return uv.x * float2(cos(angle), sin(angle)) + uv.y * float2(-sin(angle), cos(angle));
+}
+
+float2 apply_uv_st(float2 uv, float4 st) {
+    return uv * st.xy + st.zw * st.xy;
+}
+
 float4 sample_maintex(ToonkuData i) {
     float4 main_col = tex2D(_MainTex, i.uv);
-    main_col = lerp(half4(1,1,1,1), main_col, _TexInfluence) * _Color;
-    float4 second = tex2D(_SecondTex, i.uv);
+    float4 color_masked = lerp(float4(1,1,1,1), _Color, _ColorMask.Sample(linear_clamp_sampler, frac(i.uv)).x);
+    // return _ColorMask.Sample(linear_clamp_sampler, i.uv);
+    main_col = lerp(half4(1,1,1,1), main_col, _TexInfluence) * color_masked;
+    // The lilgoon way
+    // float4 second = tex2D(_SecondTex, rotate2(TRANSFORM_TEX(i.uv, _SecondTex) - TRANSFORM_TEX(float2(0.5,0.5), _SecondTex), _SecondTexAngle)+TRANSFORM_TEX(float2(0.5,0.5), _SecondTex));
+    // my way :)
+    float4 second = tex2D(_SecondTex, rotate2(apply_uv_st(i.uv, _SecondTex_ST) - float2(0.5,0.5), _SecondTexAngle)+float2(0.5,0.5));
     if(_SecondTexMode == 0) {
         main_col *= lerp(1.0.xxxx, second, _SecondTexStrength);
     } else if (_SecondTexMode == 1) {
@@ -461,7 +480,7 @@ float3 oklab_adjust(ToonkuData i, float3 col, float3 hue) {
 
 float3 color_adjust(ToonkuData i, float3 col, float3 hue) {
     float3 ret = col;
-    float mask = tex2D(_HSVMaskTex, i.uv).x;
+    float mask = _HSVMaskTex.Sample(linear_clamp_sampler, i.uv).x;
     [branch] if(hue.x || _ChromaMul != 1.0f || _LightnessMul != 1.0f) {
         [branch] if(_UseHSV * mask)
             ret = hsv_adjust(i, col, hue);
@@ -518,7 +537,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     normal.x = dot(float3(input.tangent.x, input.bitangent.x, i.normal.x), tex_normal2);
     normal.y = dot(float3(input.tangent.y, input.bitangent.y, i.normal.y), tex_normal2);
     normal.z = dot(float3(input.tangent.z, input.bitangent.z, i.normal.z), tex_normal2);
-    i.normal = lerp(i.normal, normal, _NormalMapMul2);
+    i.normal = lerp(i.normal, normal, _NormalMapMul2 * _NormalMask2.Sample(linear_clamp_sampler, i.uv));
     if(_FlipBacksideNormals) i.normal = i.normal * facing;
     i.normal = normalize(i.normal);
     i.view_dir = normalize(_WorldSpaceCameraPos - i.wpos.xyz);
@@ -533,7 +552,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     if(_MultiplyMainByVertexCol) i.color *= i.vertex_color;
     clip(i.color.a - (1-_AlphaClip));
     i.vnormal = normalize(input.vnormal);
-    float metalness = tex2D(_MetalnessTex, i.uv) * _Metalness;
+    float metalness = _MetalnessTex.Sample(linear_clamp_sampler, i.uv) * _Metalness;
     i.metalness = metalness;
     float2 screen_uv = input.screenpos.xy / input.screenpos.w;
 #ifdef XMASLIGHTS
@@ -765,9 +784,9 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 #endif
     
     
-    float roughness = tex2D(_RoughnessTex, i.uv) * _Roughness;
+    float roughness = _RoughnessTex.Sample(linear_clamp_sampler, i.uv) * _Roughness;
     roughness = max(roughness, _RoughnessMin);
-    float envmapmul = tex2D(_EnvMapMaskTex, i.uv) * _EnvMapMask;
+    float envmapmul = _EnvMapMaskTex.Sample(linear_clamp_sampler, i.uv) * _EnvMapMask;
     float3 lv_spec = 0;
     float4 col_adjusted = float4(color_adjust(i,i.color.rgb,input.hue), i.color.a);
     if(have_light_volumes) {

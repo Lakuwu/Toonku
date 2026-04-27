@@ -1,10 +1,12 @@
         [Header(Base Color)]
 		[Space]
 		_Color("    Color", Color) = (1, 1, 1, 1)
+		[NoScaleOffset] _ColorMask("    Color Mask", 2D) = "white" {}
 		[NoScaleOffset] _MainTex("    Main Texture", 2D) = "white" {}
-		[NoScaleOffset] _SecondTex("    Second Texture", 2D) = "white" {}
+		_SecondTex("    Second Texture", 2D) = "white" {}
 		[Enum(Mul,0,Add,1)] _SecondTexMode("    Second Texture Mode", Float) = 0
 		_SecondTexStrength("    Second Texture Strength", range(0,1)) = 1
+		_SecondTexAngle("    Second Texture Angle", Float) = 0
 		_TexInfluence("    Texture Influence", range(0,1)) = 1
 		
 		[Header(Alpha Transparency)]
@@ -26,6 +28,7 @@
 		_NormalMapMul("    Normal Map Strength", Float) = 1
 		[Normal] _NormalTex2("    Secondary Normal Map Texture", 2D) = "bump" {}
 		_NormalMapMul2("    Secondary Normal Map Strength", Float) = 1
+		[NoScaleOffset] _NormalMask2("    Secondary Normal Map Mask", 2D) = "white" {}
 		
 		[Header(Environment Mapping)]
 		[Space]
