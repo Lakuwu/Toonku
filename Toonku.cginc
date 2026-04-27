@@ -232,7 +232,7 @@ float4 xmaslight(v2fa v) {
 
 #ifdef TOONKU_GEOMETRY
 
-appdata vert(appdata v) {
+appdata gert(appdata v) {
     return v;
 }
 
