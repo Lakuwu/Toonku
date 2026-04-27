@@ -24,6 +24,8 @@
 		[Space]
 		[Normal] _NormalTex("    Normal Map Texture", 2D) = "bump" {}
 		_NormalMapMul("    Normal Map Strength", Float) = 1
+		[Normal] _NormalTex2("    Secondary Normal Map Texture", 2D) = "bump" {}
+		_NormalMapMul2("    Secondary Normal Map Strength", Float) = 1
 		
 		[Header(Environment Mapping)]
 		[Space]

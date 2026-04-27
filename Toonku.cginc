@@ -30,6 +30,9 @@ float _EmissionMainTexMul;
 sampler2D _NormalTex;
 float4 _NormalTex_ST;
 float _NormalMapMul;
+sampler2D _NormalTex2;
+float4 _NormalTex2_ST;
+float _NormalMapMul2;
 float4 _MainTex_TexelSize;
 sampler2D _MetalnessTex;
 sampler2D _RoughnessTex;
@@ -506,11 +509,16 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     i.vertex_color = input.color;
     // normal mapping :)
     float3 tex_normal = UnpackNormal(tex2D(_NormalTex, TRANSFORM_TEX(i.uv, _NormalTex)));
+    float3 tex_normal2 = UnpackNormal(tex2D(_NormalTex2, TRANSFORM_TEX(i.uv, _NormalTex2)));
     float3 normal;
     normal.x = dot(float3(input.tangent.x, input.bitangent.x, input.normal.x), tex_normal);
     normal.y = dot(float3(input.tangent.y, input.bitangent.y, input.normal.y), tex_normal);
     normal.z = dot(float3(input.tangent.z, input.bitangent.z, input.normal.z), tex_normal);
     i.normal = lerp(input.normal, normal, _NormalMapMul);
+    normal.x = dot(float3(input.tangent.x, input.bitangent.x, i.normal.x), tex_normal2);
+    normal.y = dot(float3(input.tangent.y, input.bitangent.y, i.normal.y), tex_normal2);
+    normal.z = dot(float3(input.tangent.z, input.bitangent.z, i.normal.z), tex_normal2);
+    i.normal = lerp(i.normal, normal, _NormalMapMul2);
     if(_FlipBacksideNormals) i.normal = i.normal * facing;
     i.normal = normalize(i.normal);
     i.view_dir = normalize(_WorldSpaceCameraPos - i.wpos.xyz);
