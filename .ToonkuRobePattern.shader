@@ -7,7 +7,7 @@ Shader "Laku/ToonkuRobePattern" {
 @@insert .Toonku_Rendering_Opaque.shader@@
     }
     SubShader {
-		// Tags { "Queue" = "Geometry" }
+		Tags { "RenderType" = "Opaque" }
 		//ZTest Always
 		Cull [_Cull]
         Pass {

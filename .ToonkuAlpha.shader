@@ -7,7 +7,7 @@ Shader "Laku/ToonkuAlpha" {
 @@insert .Toonku_Rendering_Transparent.shader@@
     }
     SubShader {
-		Tags { "Queue" = "Transparent" }
+		Tags { "Queue" = "Transparent" "RenderType" = "Opaque" }
 		//ZTest Always
 		Cull [_Cull]
         Pass {
