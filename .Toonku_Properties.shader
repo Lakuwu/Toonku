@@ -15,6 +15,8 @@
 		_AlphaStart("    Alpha Start", range(0,1)) = 0
 		_AlphaEnd("    Alpha End", range(0,1)) = 1
 		_AlphaClip("    Alpha Clip", range(0,1)) = 1
+		[ToggleUI] _AlphaBC7Fix("    Fix BC7 Alpha", Float) = 1
+		[ToggleUI] _AlphaIgnoreTex("    Ignore Texture Alpha", Float) = 0
 		
 		[Header(Emission)]
 		[Space]

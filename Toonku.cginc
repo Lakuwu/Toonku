@@ -29,6 +29,8 @@ float _SecondTexAngle;
 sampler2D _AlphaTex;
 float _AlphaStart;
 float _AlphaEnd;
+float _AlphaBC7Fix;
+float _AlphaIgnoreTex;
 sampler2D _EmissionTex;
 float _EmissionMul;
 float _EmissionMainTexMul;
@@ -345,36 +347,39 @@ float2 apply_uv_st(float2 uv, float4 st) {
 
 float4 sample_maintex(ToonkuData i) {
     float4 main_col = tex2D(_MainTex, i.uv);
+    [branch]if(_AlphaBC7Fix) main_col.a = saturate(main_col.a * (255.0 / 254.0));
+    [branch]if(_AlphaIgnoreTex) main_col.a = 1;
     float4 color_masked = lerp(float4(1,1,1,1), _Color, _ColorMask.Sample(linear_clamp_sampler, frac(i.uv)).x);
     // return _ColorMask.Sample(linear_clamp_sampler, i.uv);
-    main_col = lerp(half4(1,1,1,1), main_col, _TexInfluence) * color_masked;
+    main_col = lerp(float4(1,1,1,1), main_col, _TexInfluence) * color_masked;
     // The lilgoon way
     // float4 second = tex2D(_SecondTex, rotate2(TRANSFORM_TEX(i.uv, _SecondTex) - TRANSFORM_TEX(float2(0.5,0.5), _SecondTex), _SecondTexAngle)+TRANSFORM_TEX(float2(0.5,0.5), _SecondTex));
-    // my way :)
+    // my way :) also i need to make this better it kinda sux to use lmao
     float4 second = tex2D(_SecondTex, rotate2(apply_uv_st(i.uv, _SecondTex_ST) - float2(0.5,0.5), _SecondTexAngle)+float2(0.5,0.5));
+    if(_AlphaIgnoreTex) second.a = 1;
     if(_SecondTexMode == 0) {
         main_col *= lerp(1.0.xxxx, second, _SecondTexStrength);
     } else if (_SecondTexMode == 1) {
         main_col.rgb += second * _SecondTexStrength;
         // main_col.a = saturate(main_col.a);
     }
-    #ifdef TOONKU_EXTRA
-        float4 extra_col = extra_func(i);
-        // float4 main_col = textureNice(_MainTex, _MainTex_TexelSize, i.uv);
-        // return 1;
-        if(extra_col.a < 0) {
-            return float4(main_col.rgb * extra_col.rgb, main_col.a);
-        }
-        return float4(lerp(main_col.rgb, extra_col.rgb, extra_col.a), main_col.a);
-    #else
-    
-    #ifdef TOONKU_OVERRIDE_MAINTEX
-        return override_maintex(i, main_col);
-    #else
-        return main_col;
-    #endif
-    
-    #endif
+#ifdef TOONKU_EXTRA
+    float4 extra_col = extra_func(i);
+    // float4 main_col = textureNice(_MainTex, _MainTex_TexelSize, i.uv);
+    // return 1;
+    if(extra_col.a < 0) {
+        return float4(main_col.rgb * extra_col.rgb, main_col.a);
+    }
+    return float4(lerp(main_col.rgb, extra_col.rgb, extra_col.a), main_col.a);
+#else
+
+#ifdef TOONKU_OVERRIDE_MAINTEX
+    return override_maintex(i, main_col);
+#else
+    return main_col;
+#endif
+
+#endif
 }
 
 float3 specular(ToonkuData i) {
