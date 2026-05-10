@@ -624,11 +624,15 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     [branch] if(have_light_volumes) {
         LightVolumeSH(i.wpos, L0, L1r, L1g, L1b);
         ambient_dir = LightVolumeEvaluate(i.normal, L0, L1r, L1g, L1b);
-        // aciil said to do normalize the sh vectors first but idk if i want to 
-        // float3 lv_dir = normalize(normalize(L1r) + normalize(L1g) + normalize(L1b)); 
-        float3 lv_dir = normalize(L1r + L1g + L1b);
-        // return dot(lv_dir, i.normal);
-        SH_Eval_01(lv_dir, L0, L1r, L1g, L1b, sh_max, sh_min, sh_dc);
+        float3 lv_dir = L1r + L1g + L1b;
+        if(length(lv_dir) > 0) {
+            SH_Eval_01(normalize(lv_dir), L0, L1r, L1g, L1b, sh_max, sh_min, sh_dc);
+        } else {
+            sh_dc = L0;
+            sh_min = L0;
+            sh_max = L0;
+        }
+        
         float3 lab_sh_dc = linear_srgb_to_oklab(sh_dc);
         float3 lab_shmax = linear_srgb_to_oklab(sh_max);
         
@@ -653,12 +657,20 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         
     } else {
         ambient_dir = max(0,ShadeSH9(float4(i.normal, 1)));
-        float3 sh9Dir = unity_SHAr.xyz * 0.333333 + unity_SHAg.xyz * 0.333333 + unity_SHAb.xyz * 0.333333;
-        sh9Dir.y = abs(sh9Dir.y); // Match liltoon behaviour; John Liltoon decreed that light from below shan't be
-        float3 lightDirectionForSH9 = dot(sh9Dir,sh9Dir) < 0.000001 ? 0 : normalize(sh9Dir);
-        // return dot(lightDirectionForSH9, i.normal);
-        ShadeSH9ToonDouble(lightDirectionForSH9, sh_max, sh_min, sh_dc);
-        // return float4(sh_dc, 1);
+        L0 = float3(unity_SHAr.w,unity_SHAg.w,unity_SHAb.w);
+        L1r = unity_SHAr.xyz;
+        L1g = unity_SHAg.xyz;
+        L1b = unity_SHAb.xyz;
+        float3 sh_dir = L1r + L1g + L1b;
+        sh_dir.y = abs(sh_dir.y); // Match liltoon behaviour; John Liltoon decreed that light from below shan't be
+        if(length(sh_dir) > 0) {
+            ShadeSH9ToonDouble(normalize(sh_dir), sh_max, sh_min, sh_dc);
+        } else {
+            sh_dc = L0;
+            sh_min = L0;
+            sh_max = L0;
+        }
+        
         float3 lab_sh_dc = linear_srgb_to_oklab(sh_dc);
         float3 lab_shmax = linear_srgb_to_oklab(sh_max);
         [branch] if(_SHDirectionalColor) {
@@ -679,7 +691,10 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         // return float4(ambient_col, 1);
     }    
     
-    float diffuse_ambient = inv_lerp(luminance(sh_min), luminance(sh_max), luminance(ambient_dir));
+    float diffuse_ambient = 1;
+    if(any(sh_min != sh_max)) {
+        diffuse_ambient = inv_lerp(luminance(sh_min), luminance(sh_max), luminance(ambient_dir));
+    }
     diffuse_ambient = saturate(diffuse_ambient); // fix weird lines :)
     diffuse_ambient *= diffuse_ambient;
     // return float4(diffuse_ambient.xxx,1);
