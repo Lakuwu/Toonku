@@ -46,6 +46,7 @@
 		
 		[Header(Shadow)]
 		[Space]
+		[NoScaleOffset] _ShadowMaskTex("    Shadow Mask", 2D) = "white" {}
 		_DiffShadeColor("    Shadow Color", Color) = (0.67,0.67,0.67,1)
 		_DiffShadeColTint("    Shadow Color Tint", range(0,1)) = 0.0
 		_DiffShadeStart("    Shadow Start", range(-1,1)) = -0.25
@@ -53,6 +54,7 @@
 		
 		[Header(Fresnel Shade)]
 		[Space]
+		[NoScaleOffset] _FresnelShadeMask("    Fresnel Shade Mask", 2D) = "white" {}
 		_FresnelShadeColor("    Fresnel Shade Color", Color) = (0.816,0.816,0.816,1)
 		_FresnelShadeStart("    Fresnel Shade Start", range(-1,1)) = 0.0
 		_FresnelShadeEnd("    Fresnel Shade End", range(-1,1)) = 0.7

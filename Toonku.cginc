@@ -22,6 +22,8 @@ SamplerState linear_repeat_sampler;
 
 sampler2D _MainTex;
 Texture2D _ColorMask;
+Texture2D _ShadowMaskTex;
+Texture2D _FresnelShadeMask;
 sampler2D _SecondTex;
 float4 _SecondTex_ST;
 float _SecondTexStrength, _SecondTexMode;
@@ -402,9 +404,11 @@ float3 shading_diff_spec(ToonkuData i, float diffuse, float fresnel_light_mask, 
     float3 albedo_col = i.color.rgb;
     float diffuse_shade = smoothstep(_DiffShadeStart, _DiffShadeEnd, diffuse);
     float3 diffuse_shade_col = lerp(_DiffShadeColor, _DiffShadeColor * albedo_col, _DiffShadeColTint);
+    diffuse_shade_col = lerp(float3(1,1,1), diffuse_shade_col, _ShadowMaskTex.Sample(linear_repeat_sampler, i.uv).x);
     float3 diffuse_col = albedo_col * lerp(diffuse_shade_col, float3(1,1,1), diffuse_shade) * (1-i.metalness * _MetalnessDiffuseMask);
     float fresnel_shade = smoothstep(_FresnelShadeStart, _FresnelShadeEnd, i.fresnel);
     float3 fresnel_shade_col = lerp(_FresnelShadeColor, float3(1,1,1), fresnel_shade);
+    fresnel_shade_col = lerp(float3(1,1,1), fresnel_shade_col, _FresnelShadeMask.Sample(linear_repeat_sampler, i.uv).x);
     float fresnel_light_ring = smoothstep(_FresnelLightRingStart, _FresnelLightRingEnd, i.fresnel);
     fresnel_light_ring = 1 - (fresnel_light_ring * _FresnelLightRingMul);
     float fresnel_light = smoothstep(_FresnelLightStart, _FresnelLightEnd, i.fresnel);
