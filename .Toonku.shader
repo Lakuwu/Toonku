@@ -80,25 +80,7 @@ Shader "Laku/Toonku" {
 			#pragma fragment frag
 			#pragma multi_compile_shadowcaster
 			#include "UnityCG.cginc"
-
-			float _Toggle1;
-            float _Toggle2;
-
-			struct v2f {
-				V2F_SHADOW_CASTER;
-			};
-
-			v2f vert(appdata_base v) {
-				v2f o;
-				TRANSFER_SHADOW_CASTER_NORMALOFFSET(o)
-				if(_Toggle1 && v.texcoord.x >= 1.0f && v.texcoord.x < 2.0f) { o.pos.z = -1; }
-                if(_Toggle2 && v.texcoord.x >= 2.0f && v.texcoord.x < 3.0f) { o.pos.z = -1; }
-				return o;
-			}
-
-			float4 frag(v2f i) : SV_Target {
-				SHADOW_CASTER_FRAGMENT(i)
-			}
+			#include "ShadowCaster.cginc"
 			ENDHLSL
 		}
     }

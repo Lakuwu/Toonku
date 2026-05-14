@@ -31,8 +31,10 @@ float _SecondTexAngle;
 sampler2D _AlphaTex;
 float _AlphaStart;
 float _AlphaEnd;
+float _AlphaLerpMode;
 float _AlphaBC7Fix;
 float _AlphaIgnoreTex;
+float _DivideRGBByAlpha;
 sampler2D _EmissionTex;
 float _EmissionMul;
 float _EmissionMainTexMul;
@@ -557,7 +559,12 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     #endif
     // i.color = lerp(half4(1,1,1,1), sample_maintex(i), _TexInfluence) * _Color;
     i.color = sample_maintex(i);
-    i.color.a *= lerp(_AlphaStart, _AlphaEnd, tex2D(_AlphaTex, i.uv).r);
+    if(_DivideRGBByAlpha) i.color.rgb /= i.color.a;
+    if(_AlphaLerpMode == 0) {
+        i.color.a = saturate(lerp(_AlphaStart, _AlphaEnd, tex2D(_AlphaTex, i.uv).r * i.color.a));
+    } else {
+        i.color.a = saturate(inv_lerp(_AlphaStart, _AlphaEnd, tex2D(_AlphaTex, i.uv).r * i.color.a));
+    }
     if(_MultiplyMainByVertexCol) i.color *= i.vertex_color;
     clip(i.color.a - (1-_AlphaClip));
     i.vnormal = normalize(input.vnormal);
