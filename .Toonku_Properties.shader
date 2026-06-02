@@ -18,7 +18,8 @@
 		[Enum(Lerp,0,InvLerp,1)] _AlphaLerpMode("    Alpha Lerp Mode", Float) = 0
 		[ToggleUI] _AlphaBC7Fix("    Fix BC7 Alpha", Float) = 1
 		[ToggleUI] _AlphaIgnoreTex("    Ignore Texture Alpha", Float) = 0
-		[ToggleUI] _DivideRGBByAlpha("    Divide RGB By Alpha", Float) = 0
+		[ToggleUI] _DivideRGBByAlpha("    Divide Texture RGB By Alpha", Float) = 0
+		[ToggleUI] _DivideRGBByAlpha2("    Divide Specular RGB By Alpha", Float) = 0
 		_ShadowAlphaClip("    Shadow Alpha Clip", range(0,1)) = 1
 		
 		[Header(Emission)]

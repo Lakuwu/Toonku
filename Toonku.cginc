@@ -19,6 +19,7 @@ float3 LightVolumeEvaluate(float3 worldNormal, float3 L0, float3 L1r, float3 L1g
 #endif
 
 SamplerState linear_repeat_sampler;
+SamplerState linear_clamp_sampler;
 
 sampler2D _MainTex;
 Texture2D _ColorMask;
@@ -35,6 +36,7 @@ float _AlphaLerpMode;
 float _AlphaBC7Fix;
 float _AlphaIgnoreTex;
 float _DivideRGBByAlpha;
+float _DivideRGBByAlpha2;
 sampler2D _EmissionTex;
 float _EmissionMul;
 float _EmissionMainTexMul;
@@ -107,6 +109,16 @@ static float4 Time = 0;
 #if _IRIDESCENT_ON
 sampler2D _IridescentTex;
 float _IridescentFresnelMul, _IridescentMul;
+#endif
+
+#ifdef REFRACT
+float _RefractDistance;
+float _RefractDarken;
+float _RefractBlur;
+Texture2D _ToonkuRefract;
+Texture2D _ToonkuRefract2;
+Texture2D _ToonkuRefract3;
+float _GrabPassStrength;
 #endif
 
 // #ifdef XMASLIGHTS
@@ -435,7 +447,7 @@ float3 shading(ToonkuData i, float diffuse, float fresnel_light_mask) {
 
 float shading_alpha(ToonkuData i) {
     float f = smoothstep(_FresnelAlphaStart, _FresnelAlphaEnd, i.fresnel);
-    return i.color.a * lerp(_FresnelAlphaValue, 1, f);
+    return lerp(_FresnelAlphaValue, 1, f);
 }
 
 float3 hsv_adjust(ToonkuData i, float3 col, float3 hue) {
@@ -752,7 +764,8 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
         spec_wl *= max(saturate(_LightColor0 * attenuation), _MinLight.xxx);
     }
     
-    lightmax = max(saturate(_LightColor0 * attenuation), _MinLight.xxx) + max(saturate(ambient_col), _MinLight.xxx);
+    // lightmax = max(saturate(_LightColor0 * attenuation), _MinLight.xxx) + max(saturate(ambient_col), _MinLight.xxx);
+    lightmax = saturate(_LightColor0 * attenuation) + saturate(ambient_col);
     float inv_lightmax = saturate(1 / luminance(lightmax));
     
     diff = inv_lightmax * (diff_ambient + diff_wl);
@@ -848,15 +861,62 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     spec += spec_env;
     // float3 pt = input.tangent;
     // col.rgb = float3(-pt.x,-pt.z,pt.y); // blender tangents?
-#ifdef ALPHA
-    col.rgb = saturate(diff) + saturate(spec) + saturate(emit);
+#if defined(ALPHA)
     col.a = saturate(i.color.a + luminance(spec));
+    if(_DivideRGBByAlpha2) {
+        col.rgb = saturate(diff) + saturate(spec)/col.a + saturate(emit);
+    } else {
+        col.rgb = saturate(diff) + saturate(spec) + saturate(emit);
+    }
+    // return col;
     // col.a = saturate(i.color.a + luminance(spec));
     // col.rgb = lerp(saturate(spec), saturate(diff) + saturate(spec), i.color.a);
     // col.a = saturate(i.color.a + max_component(spec));
     // col.a = lerp(i.color.a, 1, luminance(spec));
     // col.a = i.color.a;
-#else
+#elif defined(REFRACT)
+    Texture2D grabtex = _ToonkuRefract;
+    if(REFRACT_PASS == 2) {
+        grabtex = _ToonkuRefract2;
+    } else if(REFRACT_PASS == 3) {
+        grabtex = _ToonkuRefract3;
+    }
+    float3 grab = grabtex.Sample(linear_clamp_sampler, screen_uv - i.vnormal.xy * _RefractDistance * i.pos.z);
+    [branch]
+    if(_RefractBlur > 0) {
+        float o = _RefractBlur * i.pos.z;
+        float2 o2 = float2(-o, -o);
+        float w = 1;
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
+        o2 = float2( o, -o);
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
+        o2 = float2(-o,  o);
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
+        o2 = float2( o,  o);
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
+        
+        o = o * 1.41;
+        o2 = float2( o,  0);
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
+        o2 = float2(-o,  0);
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
+        o2 = float2( 0,  o);
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
+        o2 = float2( 0, -o);
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
+        
+        grab *= 1.0/9.0;
+    }
+    grab = lerp(1.0.xxx, grab, _GrabPassStrength);
+    grab *= lerp(1.0.xxx, i.vnormal.z, _RefractDarken);
+    col.a = saturate(i.color.a + luminance(spec));
+    // return float4(diff.rgb, 1);
+    if(_DivideRGBByAlpha2) {
+        col.rgb = saturate(diff * grab) + saturate(spec)/col.a + saturate(emit);
+    } else {
+        col.rgb = saturate(diff * grab) + saturate(spec) + saturate(emit);
+    }
+#else 
     if(_LegacyShading) {
         col.rgb += saturate(spec);
         // col.rgb = col_ambient;
@@ -880,8 +940,7 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
 #endif
     col.rgb += color_adjust(i, tex2D(_EmissionTex, i.uv) * _EmissionMul * lerp(1.0.xxx, i.color.rgb, _EmissionMainTexMul), input.hue);
     col.rgb *= _FinalBrightness;
-
-    col.a = shading_alpha(i);
+    col.a *= shading_alpha(i);
 
     float3 dithering = (ditherNoiseFuncHigh(screen_uv) - 0.5) * 2 * 0.0002;
     col.rgb = max(col.rgb + dithering.xxx, float3(0,0,0));
