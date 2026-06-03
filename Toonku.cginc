@@ -876,34 +876,36 @@ half4 frag (v2fa input, half facing : VFACE) : SV_Target {
     // col.a = i.color.a;
 #elif defined(REFRACT)
     Texture2D grabtex = _ToonkuRefract;
+    float2 fov = 1.0.xx / atan(1.0.xx / unity_CameraProjection._m00_m11);
     if(REFRACT_PASS == 2) {
         grabtex = _ToonkuRefract2;
     } else if(REFRACT_PASS == 3) {
         grabtex = _ToonkuRefract3;
     }
-    float3 grab = grabtex.Sample(linear_clamp_sampler, screen_uv - i.vnormal.xy * _RefractDistance * i.pos.z);
+    float2 refr = i.vnormal.xy * _RefractDistance * i.pos.z * fov;
+    float3 grab = grabtex.Sample(linear_clamp_sampler, screen_uv - refr);
     [branch]
     if(_RefractBlur > 0) {
         float o = _RefractBlur * i.pos.z;
-        float2 o2 = float2(-o, -o);
+        float2 o2 = float2(-o, -o) * fov;
         float w = 1;
-        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
-        o2 = float2( o, -o);
-        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
-        o2 = float2(-o,  o);
-        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
-        o2 = float2( o,  o);
-        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - refr);
+        o2 = float2( o, -o) * fov;
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - refr);
+        o2 = float2(-o,  o) * fov;
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - refr);
+        o2 = float2( o,  o) * fov;
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - refr);
         
         o = o * 1.41;
-        o2 = float2( o,  0);
-        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
-        o2 = float2(-o,  0);
-        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
-        o2 = float2( 0,  o);
-        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
-        o2 = float2( 0, -o);
-        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - i.vnormal.xy * _RefractDistance * i.pos.z);
+        o2 = float2( o,  0) * fov;
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - refr);
+        o2 = float2(-o,  0) * fov;
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - refr);
+        o2 = float2( 0,  o) * fov;
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - refr);
+        o2 = float2( 0, -o) * fov;
+        grab += w*grabtex.Sample(linear_clamp_sampler, screen_uv + o2 - refr);
         
         grab *= 1.0/9.0;
     }
